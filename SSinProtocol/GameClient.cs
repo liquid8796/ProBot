@@ -114,7 +114,7 @@ namespace PROProtocol
         public event Action ActivePokemonChanged;
         public event Action OpponentChanged;
 
-        private const string Version = "Christmas_21";
+        private const string Version = "Christmas_21_v2";
 
         private GameConnection _connection;
         private DateTime _lastMovement;
