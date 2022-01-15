@@ -51,7 +51,7 @@ namespace PROProtocol
         };
 
         private static readonly char[] Movements = new[] { 'U', 'D', 'L', 'R' };
-
+        
         public int Id { get; }
         public string Name { get; }
         public bool IsBattler { get; }
@@ -61,13 +61,13 @@ namespace PROProtocol
         public int PositionY { get; }
         public Direction Direction { get; }
         public int LosLength { get; }
-        public string TypeDescription => (TypeDescriptions.ContainsKey(Type) ? TypeDescriptions[Type] + " " : "") + "(" + Type + ")";
+        public string TypeDescription => (TypeDescriptions.ContainsKey(Type) ? TypeDescriptions[Type] + " ":"") + "(" + Type + ")";
         public string Path { get; }
-
+        
         public bool IsMoving => Path.Length > 0 && Path.IndexOfAny(Movements) >= 0;
 
-        public bool CanBlockPlayer => Type != 10 && Type != 113;
-
+        public bool CanBlockPlayer => Type != 10 && Type != 113 && Type != 0;
+        
         public Npc(int id, string name, bool isBattler, int type, int x, int y, Direction direction, int losLength, string path)
         {
             Id = id;
@@ -87,11 +87,11 @@ namespace PROProtocol
             return new Npc(Id, Name, IsBattler, Type, PositionX, PositionY, Direction, LosLength, Path);
         }
 
-        public bool IsInLineOfSight(int x, int y, bool skipMovingNpc = false)
+        public bool IsInLineOfSight(int x, int y)
         {
             if (x != PositionX && y != PositionY) return false;
             int distance = GameClient.DistanceBetween(PositionX, PositionY, x, y);
-            if (distance > LosLength || (skipMovingNpc && IsMoving)) return false;
+            if (distance > LosLength) return false;
             switch (Direction)
             {
                 case Direction.Up:

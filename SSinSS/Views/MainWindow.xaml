@@ -123,14 +123,28 @@
                 </MenuItem>
             </Menu>
             <DockPanel Background="#FFB5C3DA" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,2">
+
+                <Button x:Name="PokeIconButton" ToolTip="?: ?" Margin="8,2,2,2" Background="#FFCDD5E2" Foreground="#FF101020" VerticalAlignment="Center" Click="PokePokedexButton_Click">
+                    <Button.Content>
+                        <fa:FontAwesome Name="PokeIconButtonIcon"  Foreground="#FF101020" Icon="info" VerticalAlignment="Center" Padding="10,0,10,0" FontSize="15"/>
+                    </Button.Content>
+                </Button>
+
+
                 <TextBlock Name="StatusIcon" Foreground="#FF101020" FontSize="15" Margin="8,2,2,2" VerticalAlignment="Center">
                     <fa:FontAwesome Icon="LightbulbOutline" VerticalAlignment="Center" />
                 </TextBlock>
                 <TextBlock Name="StatusText" Text="Offline" Foreground="DarkRed" Margin="2,2,2,2" VerticalAlignment="Center"/>
-                <TextBlock Name="PokeTimeIcon" Foreground="#FF101020" FontSize="15" Margin="8,2,2,2" VerticalAlignment="Center">
+                <TextBlock Name="PokeTimeIcon" ToolTip="Morning: 04:00 to 10:00 &#x0a;Day/Noon: 10:00 to 20:00 &#x0a;Night: 20:00 to 04:00" Foreground="#FF101020" FontSize="15" Margin="8,2,2,2" VerticalAlignment="Center">
                     <fa:FontAwesome Icon="ClockOutline" VerticalAlignment="Center" />
                 </TextBlock>
-                <TextBlock Name="PokeTimeText" Text="??:??" Margin="2,2,2,2" VerticalAlignment="Center"/>
+                <TextBlock Name="PokeTimeText" Text="??:??" ToolTip="Morning: 04:00 to 10:00 &#x0a;Day/Noon: 10:00 to 20:00 &#x0a;Night: 20:00 to 04:00" Margin="2,2,2,2" VerticalAlignment="Center"/>
+
+                <TextBlock Name="MemberIcon" ToolTip="?" Foreground="#FF101020" FontSize="15" Margin="8,4,2,2" VerticalAlignment="Center">
+                    <fa:FontAwesome Icon="user" VerticalAlignment="Center"/>
+                </TextBlock>
+                <TextBlock Name="MemberText" Text="?" ToolTip="?" Margin="2,2,2,2" VerticalAlignment="Center"/>
+
                 <TextBlock Name="MapNameIcon" Foreground="#FF101020" FontSize="15" Margin="8,2,2,2" VerticalAlignment="Center">
                     <fa:FontAwesome Icon="MapOutline" VerticalAlignment="Center"/>
                 </TextBlock>
@@ -143,6 +157,25 @@
                     <fa:FontAwesome Icon="Rub" VerticalAlignment="Center"/>
                 </TextBlock>
                 <TextBlock Name="MoneyText" Text="?" Margin="2,2,2,2" VerticalAlignment="Center"/>
+
+                <TextBlock Name="BadgeIcon" ToolTip="?: ?" Foreground="#FF101020" FontSize="15" Margin="8,4,2,2" VerticalAlignment="Center">
+                    <fa:FontAwesome Icon="certificate" VerticalAlignment="Center"/>
+                </TextBlock>
+                <TextBlock Name="BadgeText" Text="?" ToolTip="?: ?" Margin="2,2,2,2" VerticalAlignment="Center"/>
+
+
+                <TextBlock Name="PDSeenIcon" ToolTip="Pokemon Seen" Foreground="#FF101020" FontSize="15" Margin="8,4,2,2" VerticalAlignment="Center">
+                    <fa:FontAwesome Icon="binoculars" VerticalAlignment="Center"/>
+                </TextBlock>
+                <TextBlock Name="PDSeenText" Text="?" ToolTip="Pokemon Seen" Margin="2,2,2,2" VerticalAlignment="Center"/>
+                <TextBlock Name="PDOwnIcon" ToolTip="Pokemon Owned" Foreground="#FF101020" FontSize="15" Margin="8,4,2,2" VerticalAlignment="Center">
+                    <fa:FontAwesome Icon="OptinMonster" VerticalAlignment="Center"/>
+                </TextBlock>
+                <TextBlock Name="PDOwnText" Text="?" ToolTip="Pokemon Owned" Margin="2,2,2,2" VerticalAlignment="Center"/>
+                <TextBlock Name="PDEvoIcon" ToolTip="Pokemon Evolved" Foreground="#FF101020" FontSize="15" Margin="8,4,2,2" VerticalAlignment="Center">
+                    <fa:FontAwesome Icon="star" VerticalAlignment="Center"/>
+                </TextBlock>
+                <TextBlock Name="PDEvoText" Text="?" ToolTip="Pokemon Evolved" Margin="2,2,2,2" VerticalAlignment="Center"/>
             </DockPanel>
         </DockPanel>
         <WrapPanel Grid.Row="1" Background="#dae1ec" VerticalAlignment="Center" Margin="4, 2, 4, 2">

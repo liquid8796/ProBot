@@ -9,7 +9,7 @@ namespace PROProtocol
     public class GameConnection : SimpleTextClient
     {
         public GameServer Server;
-
+        
         private bool _useSocks;
         private int _socksVersion;
         private string _socksHost;
@@ -21,6 +21,7 @@ namespace PROProtocol
             : base(new BrightClient())
         {
             PacketDelimiter = "|.\\\r\n";
+            //TextEncoding = Encoding.GetEncoding(1252);
             TextEncoding = Encoding.GetEncoding("ISO-8859-1");
 
             Server = server;
@@ -40,7 +41,7 @@ namespace PROProtocol
         public async void Connect()
         {
             var serverHost = Server.GetAddress();
-
+            
             if (!_useSocks)
             {
                 Connect(serverHost.Address, serverHost.Port);

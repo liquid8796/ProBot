@@ -140,7 +140,7 @@ namespace PROShine
 
         private void MacRandomButton_Click(object sender, RoutedEventArgs e)
         {
-            MacAddressTextBox.Text = HardwareHash.GenerateRandomHash().ToString();
+            MacAddressTextBox.Text = HardwareHash.GenerateRandom().ToString();
         }
         
         private void ProxyCheckBox_Checked(object sender, RoutedEventArgs e)

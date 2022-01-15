@@ -5,7 +5,7 @@ namespace PROProtocol
     public static class HardwareHash
     {
         private static readonly Random Random = new Random();
-        public static Guid GenerateRandomHash()
+        public static Guid GenerateRandom()
         {
             return Guid.NewGuid();
         }
@@ -15,9 +15,11 @@ namespace PROProtocol
             // TODO: find a way to retrieve the real Device ID from Unity.
             throw new NotImplementedException();
         }
+
         public static string GenerateRandomOsInfo()
         {
-            string[] osVer = {"Windows 10  (10.0.18363) 64bit",
+            string[] osVer = {"Windows 10  (10.0.19041.0928) 64bit",
+                              "Windows 10  (10.0.18363) 64bit",
                               "Windows 10  (10.0.10240) 64bit",
                               "Windows 10  (10.0.10586) 64bit",
                               "Windows 10  (10.0.14393) 64bit",
@@ -29,8 +31,8 @@ namespace PROProtocol
                               "Windows 10  (10.0.19041) 64bit",
                               "Windows 10  (10.0.19042) 64bit",
                               "Windows 10  (10.0.19043) 64bit",
-                              "Windows 8.1 (6.3.9600) 64 bit",
-                              "Windows 7 (6.1.7601) 64bit",
+                              //"Windows 8.1 (6.3.9600) 64 bit",
+                              //"Windows 7 (6.1.7601) 64bit",
                               //"Mac OS X 10.10.4",
                               //"iPhone OS 8.4",
                               //"Android OS API-22",
@@ -46,6 +48,7 @@ namespace PROProtocol
 
             return osVer[vRandom];
         }
+
         public static string RetrieveRealOsInfo()
         {
             // TODO: find a way to retrieve the real Os Info from Unity.

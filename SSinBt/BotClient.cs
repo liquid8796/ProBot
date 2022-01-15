@@ -23,7 +23,7 @@ namespace PROBot
         public AccountManager AccountManager { get; private set; }
         public Random Rand { get; private set; }
         public Account Account { get; set; }
-        public UserSettings Settings { get; private set; }
+        public UserSettings Settings { get; private set;}
 
         public State Running { get; private set; }
         public bool IsPaused { get; private set; }
@@ -45,7 +45,7 @@ namespace PROBot
         public MovementResynchronizer MovementResynchronizer { get; private set; }
         public Dictionary<int, OptionSlider> SliderOptions { get; set; }
         public Dictionary<int, TextOption> TextOptions { get; set; }
-
+        
         private bool _loginRequested;
         private bool _authenticationRequired;
 
@@ -185,9 +185,10 @@ namespace PROBot
                 if (Encryption.StateReady)
                 {
                     // TODO: Add an option to select the OS we want, it could be useful.
+                    LogMessage("Hwid before: " + Account.DeviceId.ToString());
                     Game.SendAuthentication(Account.Name,
                         Account.Password,
-                        Account.DeviceId ?? HardwareHash.GenerateRandomHash(),
+                        Account.DeviceId ?? HardwareHash.GenerateRandom(),
                         HardwareHash.GenerateRandomOsInfo());
                     _authenticationRequired = false;
                 }
@@ -211,7 +212,7 @@ namespace PROBot
             {
                 return;
             }
-
+            
             if (Game.IsCreatingNewCharacter)
             {
                 LogMessage("Creating a new character with a random skin...");
@@ -262,7 +263,7 @@ namespace PROBot
         {
             if (Game != null)
                 Game.ClearPath();
-
+            
             if (Running != State.Stopped)
             {
                 Running = State.Stopped;
@@ -411,7 +412,7 @@ namespace PROBot
                 Stop();
             }
         }
-
+        
         private void Client_ConnectionOpened()
         {
             ConnectionOpened?.Invoke();

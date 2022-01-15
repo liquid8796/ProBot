@@ -343,6 +343,7 @@ namespace PROBot.Scripting
             _lua.Globals["removeTextOption"] = new Action<int>(RemoveTextOption);
 
             // File editing actions
+            _lua.Globals["writeToFile"] = new Action<string, string, bool>(WriteToFile);
             _lua.Globals["logToFile"] = new Action<string, DynValue, bool>(LogToFile);
             _lua.Globals["readLinesFromFile"] = new Func<string, string[]>(ReadLinesFromFile);
 
@@ -2676,21 +2677,14 @@ namespace PROBot.Scripting
                 return false;
             }
 
-            MovesManager.MoveData move = Bot.Game.MoveRelearner.Moves.FirstOrDefault(i => i.Name.Equals(moveName, StringComparison.InvariantCultureIgnoreCase));
+            MovesManager.MoveData move = Bot.Game.MoveRelearner.Moves.FirstOrDefault(i => i.Name.Equals(moveName.ToLowerInvariant(), StringComparison.InvariantCultureIgnoreCase));
 
             if (move == null)
             {
                 Fatal($"error: relearnMove: the move '{ moveName }' cannot be learn by the current Pokemon or already learnt.");
                 return false;
             }
-
-            int moveId = MovesManager.Instance.GetMoveId(moveName);
-            if (moveId == -1)
-            {
-                Fatal($"error: relearnMove: the move '{ moveName }' cannot be learn by the current Pokemon or already learnt.");
-                return false;
-            }
-            return ExecuteAction(Bot.Game.PurchaseMove(moveId));
+            return ExecuteAction(Bot.Game.PurchaseMove(moveName));
         }
 
         // API: Give the specified item on the specified pokemon.
@@ -2948,6 +2942,18 @@ namespace PROBot.Scripting
                 File.WriteAllText(info.FullName, sb.ToString());
             else
                 File.AppendAllText(info.FullName, sb.ToString());
+        }
+
+        // API: Writes a string to file
+        // overwrite is an optional parameter, and will append the line(s) if absent
+        private void WriteToFile(string filename, string text, bool overwrite = false)
+        {
+            FileInfo info = new FileInfo(filename);
+
+            if (overwrite)
+                File.WriteAllText(info.FullName, text);
+            else
+                File.AppendAllText(info.FullName, text);
         }
 
         // API: Returns a table of every line in file

@@ -17,6 +17,7 @@ using System.Windows.Media;
 using System.Windows.Input;
 using System.Collections.ObjectModel;
 using PROBot.Modules;
+using System.Linq;
 
 namespace PROShine
 {
@@ -30,6 +31,9 @@ namespace PROShine
         public PlayersView Players { get; private set; }
         public MapView Map { get; private set; }
         public BattleView Battle { get; private set; }
+        public static bool scriptProvided = false, loginable = false;
+        public static Account account_ss { get;  set; }
+        public static string filePath_ss { get; set; }
 
         private struct TabView
         {
@@ -126,6 +130,132 @@ namespace PROShine
 
             OptionSliders.ItemsSource = _sliderOptions = new ObservableCollection<OptionSlider>();
             TextOptions.ItemsSource = _textOptions = new ObservableCollection<TextOption>();
+
+
+            if (App.Args.Length > 0)
+            {
+                StartByArgs();
+            }
+        }
+
+        public async void StartByArgs()
+        {
+            
+            string[] args = App.Args;//Environment.GetCommandLineArgs();
+            account_ss = new Account("");
+            filePath_ss = "";
+            string help_text = "How to write the command\t\tConstraints (if any)\n1. Prefix -u followed by your PRO Username\t\tNo Constraints\n2. Prefix -p followed by your PRO Password\t\tNo Constraints\n3. Prefix -s followed by your PRO Server name\tEither \"silver\" or \"gold\"\n4. Prefix -ph followed by your Proxy host\t\tNo constraints\n5. Prefix -pt followed by your Proxy Port\t\tMust always be Numerical and non-zero\n6. Prefix -pu followed by your Proxy Username\tNo Constraints\n7. Prefix -pp followed by your Proxy Password\tNo Constraints\n8. Prefix -ver followed by your Proxy Version\t\tUse 4 or 5 for SOCKS4 and SOCKS5 Respectively"
+                                  + "\nThe command should look like this if u are using a proxy server: <path of bot> -u <PRO username> -p <PRO Password> -s <Server name> -ph <Proxy host> -pt <Proxy port> -pu <proxy username> -pp <proxy password> -ver <Proxy version>"
+                                  + "\nIt is to be noted that if u are not using proxy, u just need to provide your PRO Username, PRO Password, and PRO server";
+
+            if (args.Contains("-help") || args.Contains("-h") || (args.Length < 6 && args.Length > 0))
+            {
+                LogMessage(help_text);
+            }
+
+            else if (args.Length == 6)
+            {
+                bool DevIDGen = true;
+                loginable = true;
+                for (int i = 0; i < args.Length; i++)
+                {
+                    if (args[i] == "-u")
+                    {
+                        account_ss.Name = args[i + 1];
+                    }
+                    else if (args[i] == "-p")
+                    {
+                        account_ss.Password = args[i + 1];
+                    }
+                    else if (args[i] == "-s")
+                    {
+                        account_ss.Server = args[i + 1];
+                    }
+                    if (Guid.TryParse((HardwareHash.GenerateRandom().ToString()).Trim(), out Guid deviceId) && DevIDGen == true)
+                    {
+                        account_ss.DeviceId = deviceId;
+                        DevIDGen = false;
+                    }
+                }
+            }
+            else if (args.Length > 6)
+            {
+                bool DevIDGen = true;
+                loginable = true;
+                for (int i = 0; i < args.Length; i++)
+                {
+                    if (args[i] == "-u")
+                    {
+                        account_ss.Name = args[i + 1];
+                    }
+                    else if (args[i] == "-p")
+                    {
+                        account_ss.Password = args[i + 1];
+                    }
+                    else if (args[i] == "-s")
+                    {
+                        account_ss.Server = args[i + 1].Trim().ToUpperInvariant();
+                    }
+                    else if (args[i] == "-ph")
+                    {
+                        account_ss.Socks.Host = args[i + 1];
+                    }
+                    else if (args[i] == "-pt")
+                    {
+                        try
+                        {
+                            account_ss.Socks.Port = int.Parse(args[i + 1]);
+                        }
+                        catch (Exception ex) { }
+                    }
+                    else if (args[i] == "-pu")
+                    {
+                        account_ss.Socks.Username = args[i + 1];
+                    }
+                    else if (args[i] == "-pp")
+                    {
+                        account_ss.Socks.Password = args[i + 1];
+                    }
+                    if (Guid.TryParse((HardwareHash.GenerateRandom().ToString()).Trim(), out Guid deviceId) && DevIDGen == true)
+                    {
+                        account_ss.DeviceId = deviceId;
+                        DevIDGen = false;
+                    }
+                    else if (args[i] == "-ver")
+                    {
+                        account_ss.Socks.Version = (SocksVersion)int.Parse(args[i + 1]);
+                    }
+                    else if (args[i] == "-path")
+                    {
+                        filePath_ss = args[i + 1].Trim();
+                        scriptProvided = true;
+                    }
+                }
+            }
+            //-----------------------------------------------
+            if (loginable)
+            {                
+                Bot.Login(account_ss);
+                loginable = false;
+                
+            }
+            //-----------------------------------------------
+        }
+
+        public async void StartByScript()
+        {
+            if (Bot.Game != null && scriptProvided)
+            {
+                //await Task.Delay(10000);
+                scriptProvided = false;
+                Bot.Start();
+                
+            }
+            else if(scriptProvided)
+            {
+                //Bot.Update();
+            }
+
         }
 
         public void Bot_SliderRemoved(OptionSlider option)
@@ -290,7 +420,7 @@ namespace PROShine
             {
                 if (Bot.Game != null)
                 {
-                    Bot.Game.Update();
+                    Bot.Game.Update();                                   
                 }
                 Bot.Update();
             }
@@ -329,6 +459,10 @@ namespace PROShine
                     account.Socks.Username = login.ProxyUsername;
                     account.Socks.Password = login.ProxyPassword;
                 }
+                LogMessage("Device Id: " + account.DeviceId);
+                LogMessage("Proxy Version: " + account.Socks.Version);
+                LogMessage("Proxy Host: " + account.Socks.Host);
+                LogMessage("Proxy Port: " + account.Socks.Port);
                 Bot.Login(account);
             }
         }
@@ -476,6 +610,7 @@ namespace PROShine
                         LoginButton.IsEnabled = true;
                         LoginButtonIcon.Icon = FontAwesome.WPF.FontAwesomeIcon.SignOut;
                         LogMessage("Connected, authenticating...");
+                        
                     }
                 }
             });
@@ -513,6 +648,7 @@ namespace PROShine
                 UpdateBotMenu();
                 StatusText.Text = "Online";
                 StatusText.Foreground = Brushes.DarkGreen;
+                
             });
         }
 
@@ -712,12 +848,209 @@ namespace PROShine
             });
         }
 
+        private bool HasItem(string itemName)
+        {
+            return Bot.Game.HasItemName(itemName.ToUpperInvariant());
+        }
+
         private void Client_PositionUpdated(string map, int x, int y)
         {
             Dispatcher.InvokeAsync(delegate
             {
-                MapNameText.Text = map;
-                PlayerPositionText.Text = "(" + x + "," + y + ")";
+                try
+                {
+                    string pdseen, pdown, pdevo;
+                    int all_badge = 0, kanto = 0, johto = 0, hoenn = 0, sinnoh = 0;
+                    // Kanto Badges-------------------------------------------------------------------------
+                    if (HasItem("Boulder Badge"))
+                    {
+                        all_badge += 1;
+                        kanto += 1;
+                    }
+                    if (HasItem("Cascade Badge"))
+                    {
+                        all_badge += 1;
+                        kanto += 1;
+                    }
+                    if (HasItem("Thunder Badge"))
+                    {
+                        all_badge += 1;
+                        kanto += 1;
+                    }
+                    if (HasItem("Rainbow Badge"))
+                    {
+                        all_badge += 1;
+                        kanto += 1;
+                    }
+                    if (HasItem("Soul Badge"))
+                    {
+                        all_badge += 1;
+                        kanto += 1;
+                    }
+                    if (HasItem("Marsh Badge"))
+                    {
+                        all_badge += 1;
+                        kanto += 1;
+                    }
+                    if (HasItem("Volcano Badge"))
+                    {
+                        all_badge += 1;
+                        kanto += 1;
+                    }
+                    if (HasItem("Earth Badge"))
+                    {
+                        all_badge += 1;
+                        kanto += 1;
+                    }//------------------------------------------------------------
+
+                    // Johto Badges-------------------------------------------------------------------------
+                    if (HasItem("Zephyr Badge"))
+                    {
+                        all_badge += 1;
+                        johto += 1;
+                    }
+                    if (HasItem("Hive Badge"))
+                    {
+                        all_badge += 1;
+                        johto += 1;
+                    }
+                    if (HasItem("Plain Badge"))
+                    {
+                        all_badge += 1;
+                        johto += 1;
+                    }
+                    if (HasItem("Fog Badge"))
+                    {
+                        all_badge += 1;
+                        johto += 1;
+                    }
+                    if (HasItem("Storm Badge"))
+                    {
+                        all_badge += 1;
+                        johto += 1;
+                    }
+                    if (HasItem("Mineral Badge"))
+                    {
+                        all_badge += 1;
+                        johto += 1;
+                    }
+                    if (HasItem("Glacier Badge"))
+                    {
+                        all_badge += 1;
+                        johto += 1;
+                    }
+                    if (HasItem("Rising Badge"))
+                    {
+                        all_badge += 1;
+                        johto += 1;
+                    }//------------------------------------------------------------------------
+
+                    // Hoenn Badges-------------------------------------------------------------------------
+                    if (HasItem("Stone Badge"))
+                    {
+                        all_badge += 1;
+                        hoenn += 1;
+                    }
+                    if (HasItem("Knuckle Badge"))
+                    {
+                        all_badge += 1;
+                        hoenn += 1;
+                    }
+                    if (HasItem("Dynamo Badge"))
+                    {
+                        all_badge += 1;
+                        hoenn += 1;
+                    }
+                    if (HasItem("Heat Badge"))
+                    {
+                        all_badge += 1;
+                        hoenn += 1;
+                    }
+                    if (HasItem("Balance Badge"))
+                    {
+                        all_badge += 1;
+                        hoenn += 1;
+                    }
+                    if (HasItem("Feather Badge"))
+                    {
+                        all_badge += 1;
+                        hoenn += 1;
+                    }
+                    if (HasItem("Mind Badge"))
+                    {
+                        all_badge += 1;
+                        hoenn += 1;
+                    }
+                    if (HasItem("Rain Badge"))
+                    {
+                        all_badge += 1;
+                        hoenn += 1;
+                    }//---------------------------------------------------------------------------
+
+                    // Sinnoh Badges-------------------------------------------------------------------------
+                    if (HasItem("Coal Badge"))
+                    {
+                        all_badge += 1;
+                        sinnoh += 1;
+                    }
+                    if (HasItem("Forest Badge"))
+                    {
+                        all_badge += 1;
+                        sinnoh += 1;
+                    }
+                    if (HasItem("Cobble Badge"))
+                    {
+                        all_badge += 1;
+                        sinnoh += 1;
+                    }
+                    if (HasItem("Fen Badge"))
+                    {
+                        all_badge += 1;
+                        sinnoh += 1;
+                    }
+                    if (HasItem("Relic Badge"))
+                    {
+                        all_badge += 1;
+                        sinnoh += 1;
+                    }
+                    if (HasItem("Mine Badge"))
+                    {
+                        all_badge += 1;
+                        sinnoh += 1;
+                    }
+                    if (HasItem("Icicle Badge"))
+                    {
+                        all_badge += 1;
+                        sinnoh += 1;
+                    }
+                    if (HasItem("Beacon Badge"))
+                    {
+                        all_badge += 1;
+                        sinnoh += 1;
+                    }//-------------------------------------------------------------------------
+
+
+                    BadgeText.Text = all_badge.ToString();
+                    BadgeText.ToolTip = "Total Badges: " + all_badge.ToString() + "\nKanto: " + kanto + "\nJohto: " + johto + "\nHoenn: " + hoenn + "\nSinnoh: " + sinnoh;
+                    BadgeIcon.ToolTip = "Total Badges: " + all_badge.ToString() + "\nKanto: " + kanto + "\nJohto: " + johto + "\nHoenn: " + hoenn + "\nSinnoh: " + sinnoh;
+
+
+                    pdseen = Bot.Game.PokedexSeen.ToString();
+                    pdown = Bot.Game.PokedexOwned.ToString();
+                    pdevo = Bot.Game.PokedexEvolved.ToString();
+
+                    PDSeenText.Text = pdseen;
+                    PDOwnText.Text = pdown;
+                    PDEvoText.Text = pdevo;
+
+                    MapNameText.Text = map;
+                    PlayerPositionText.Text = "(" + x + "," + y + ")";
+                }
+                catch(Exception ex)
+                {
+                    LogMessage(ex.ToString());
+                }
+                
             });
         }
 
@@ -729,9 +1062,26 @@ namespace PROShine
                 lock (Bot)
                 {
                     team = Bot.Game.Team.ToArray();
+                    if (Bot.Game.IsMember)
+                    {
+                        MemberText.Text = "1";
+                        MemberText.ToolTip = "Membership: Activated";
+                        MemberIcon.ToolTip = "Membership: Activated";
+                        MemberText.Foreground = Brushes.DarkGreen;
+                        MemberIcon.Foreground = Brushes.DarkGreen;
+                    }
+                    else
+                    {
+                        MemberText.Text = "0";
+                        MemberText.ToolTip = "Membership: Expired!";
+                        MemberIcon.ToolTip = "Membership: Expired!";
+                        MemberText.Foreground = Brushes.Red;
+                        MemberIcon.Foreground = Brushes.Red;
+                    }
                 }
                 Team.PokemonsListView.ItemsSource = team;
                 Team.PokemonsListView.Items.Refresh();
+                
             });
         }
 
@@ -747,8 +1097,19 @@ namespace PROShine
                     items = Bot.Game.Items.ToArray();
                 }
                 MoneyText.Text = money;
+                MoneyText.FontWeight = FontWeights.Bold;
+                MoneyText.Foreground = Brushes.Blue;
+                MoneyIcon.Foreground = Brushes.Blue;
                 Inventory.ItemsListView.ItemsSource = items;
                 Inventory.ItemsListView.Items.Refresh();
+                if (scriptProvided)
+                {
+                    //await Task.Delay(5000);
+                    //Thread.Sleep(5000);
+                    LoadScript(filePath_ss);
+                    //await Task.Delay(1000);
+                    Task.Run(() => StartByScript());
+                }
             });
         }
 
@@ -811,14 +1172,61 @@ namespace PROShine
             });
         }
 
+        private bool IsMorning()
+        {
+            DateTime dt = Convert.ToDateTime(Bot.Game.PokemonTime);
+            if (dt.Hour >= 4 && dt.Hour < 10)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private bool IsNoon()
+        {
+            DateTime dt = Convert.ToDateTime(Bot.Game.PokemonTime);
+            if (dt.Hour >= 10 && dt.Hour < 20)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private bool IsNight()
+        {
+            DateTime dt = Convert.ToDateTime(Bot.Game.PokemonTime);
+            if (dt.Hour >= 20 || dt.Hour < 4)
+            {
+                return true;
+            }
+            return false;
+        }
+
         private void Client_PokeTimeUpdated(string pokeTime, string weather)
         {
             Dispatcher.InvokeAsync(delegate
             {
-                PokeTimeText.Text = pokeTime;
+                
+                if (IsNight())
+                {
+                    PokeTimeText.Text = pokeTime + " (" + "Night" + ")";
+                }
+                else if (IsNoon())
+                {
+                    PokeTimeText.Text = pokeTime + " (" + "Noon" + ")";
+                }
+                else if (IsMorning())
+                {
+                    PokeTimeText.Text = pokeTime + " (" + "Morning" + ")";
+                }
+                else
+                {
+                    PokeTimeText.Text = pokeTime + " ( " + "UNKNOWN" + " )";
+                }
+
             });
         }
-        
+
         private void Client_ShopOpened(Shop shop)
         {
             Dispatcher.InvokeAsync(delegate
@@ -993,6 +1401,33 @@ namespace PROShine
             lock (Bot)
             {
                 Bot.AutoReconnector.IsEnabled = false;
+            }
+        }
+
+        private void PokePokedexButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Bot.Game.SendPokedexRequest();
+                string pokedexdata = "Total Pokemon\nKanto: " + Bot.Game.KantoAllPoke.ToString().PadRight(8) + "Johto: " + Bot.Game.JohtoAllPoke.ToString() + "\nHoenn: " + Bot.Game.HoennAllPoke.ToString().PadRight(8) + "Sinnoh: " + Bot.Game.SinnohAllPoke.ToString().PadRight(8) + "Others: " + Bot.Game.OtherAllPoke.ToString()
+                                     + "\n\nKanto Pokemon\nSeen: " + Bot.Game.KantoSeen.ToString().PadRight(8) + "Captured: " + Bot.Game.KantoOwned.ToString().PadRight(8) + "Evolved: " + Bot.Game.KantoEvolved.ToString()
+                                     + "\n\nJohto Pokemon\nSeen: " + Bot.Game.JohtoSeen.ToString().PadRight(8) + "Captured: " + Bot.Game.JohtoOwned.ToString().PadRight(8) + "Evolved: " + Bot.Game.JohtoEvolved.ToString()
+                                     + "\n\nHoenn Pokemon\nSeen: " + Bot.Game.HoennSeen.ToString().PadRight(8) + "Captured: " + Bot.Game.HoennOwned.ToString().PadRight(8) + "Evolved: " + Bot.Game.HoennEvolved.ToString()
+                                     + "\n\nSinnoh Pokemon\nSeen: " + Bot.Game.SinnohSeen.ToString().PadRight(8) + "Captured: " + Bot.Game.SinnohOwned.ToString().PadRight(8) + "Evolved: " + Bot.Game.SinnohEvolved.ToString()
+                                     + "\n\nOther Pokemon\nSeen: " + Bot.Game.OtherSeen.ToString().PadRight(8) + "Captured: " + Bot.Game.OtherOwned.ToString().PadRight(8) + "Evolved: " + Bot.Game.OtherEvolved.ToString();
+
+                //string pokedexdata = "TotalPokemon\nKanto:" + Bot.Game.KantoAllPoke.ToString() + "\tJohto:" + Bot.Game.JohtoAllPoke.ToString() + "\nHoenn:" + Bot.Game.HoennAllPoke.ToString() + "\tSinnoh:" + Bot.Game.SinnohAllPoke.ToString() + "\tOthers:" + Bot.Game.OtherAllPoke.ToString() + "\nKantoPokemon\nSeen:" + Bot.Game.KantoSeen.ToString() + "\tCaptured:" + Bot.Game.KantoOwned.ToString() + "\tEvolved:" + Bot.Game.KantoEvolved.ToString() + "\nJohtoPokemon\nSeen:" + Bot.Game.JohtoSeen.ToString() + "\tCaptured:" + Bot.Game.JohtoOwned.ToString() + "\tEvolved:" + Bot.Game.JohtoEvolved.ToString() + "\nHoennPokemon\nSeen:" + Bot.Game.HoennSeen.ToString() + "\tCaptured:" + Bot.Game.HoennOwned.ToString() + "\tEvolved:" + Bot.Game.HoennEvolved.ToString() + "\nSinnohPokemon\nSeen:" + Bot.Game.SinnohSeen.ToString() + "\tCaptured:" + Bot.Game.SinnohOwned.ToString() + "\tEvolved:" + Bot.Game.SinnohEvolved.ToString() + "\nOtherPokemon\nSeen:" + Bot.Game.OtherSeen.ToString() + "\tCaptured:" + Bot.Game.OtherOwned.ToString() + "\tEvolved:" + Bot.Game.OtherEvolved.ToString(); 
+
+                Clipboard.SetDataObject(pokedexdata + Environment.NewLine + GameClient.Evolution_Left + Environment.NewLine + "Total Evolutions Left: " + (GameClient.Evolution_Counter+8));
+                PokeIconButton.ToolTip = pokedexdata;
+
+                LogMessage(pokedexdata);
+                LogMessage("Copied To Clipboard Also");
+
+            }
+            catch (Exception ex)
+            {
+                LogMessage("Error: " + ex);
             }
         }
 

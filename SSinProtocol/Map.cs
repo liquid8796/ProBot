@@ -94,9 +94,9 @@ namespace PROProtocol
                         int direction = reader.ReadByte();
                         int losLength = reader.ReadByte();
                         int type = reader.ReadInt16();
-
+                        
                         string path = ReadString(reader);
-
+                        
                         bool isBattler = reader.ReadInt16() != 0;
 
                         int npcId = reader.ReadInt32();
@@ -190,35 +190,6 @@ namespace PROProtocol
             }
 
             return false;
-        }
-
-        public Direction GetWaterDirectionFrom(int positionX, int positionY)
-        {
-            int collider = GetCollider(positionX, positionY - 1);
-            if (collider == 5 || collider == 12)
-            {
-                return Direction.Up;
-            }
-
-            collider = GetCollider(positionX, positionY + 1);
-            if (collider == 5 || collider == 12)
-            {
-                return Direction.Down;
-            }
-
-            collider = GetCollider(positionX - 1, positionY);
-            if (collider == 5 || collider == 12)
-            {
-                return Direction.Left;
-            }
-
-            collider = GetCollider(positionX + 1, positionY);
-            if (collider == 5 || collider == 12)
-            {
-                return Direction.Right;
-            }
-
-            return Direction.Down;
         }
 
         public MoveResult CanMove(Direction direction, int destinationX, int destinationY, bool isOnGround, bool isSurfing, bool canUseCut, bool canUseSmashRock)

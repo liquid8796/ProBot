@@ -29,6 +29,37 @@ namespace PROProtocol
         public static bool TradeGiver { get; set; } = false;
         public static bool TradeAccepter { get; set; } = false;
 
+        //-------------------------------------------------------------------------------------------------
+
+        public int KantoSeen { get; private set; }
+        public int KantoOwned { get; private set; }
+        public int KantoEvolved { get; private set; }
+        public int KantoAllPoke { get; private set; }
+
+        public int JohtoSeen { get; private set; }
+        public int JohtoOwned { get; private set; }
+        public int JohtoEvolved { get; private set; }
+        public int JohtoAllPoke { get; private set; }
+
+        public int HoennSeen { get; private set; }
+        public int HoennOwned { get; private set; }
+        public int HoennEvolved { get; private set; }
+        public int HoennAllPoke { get; private set; }
+
+        public int SinnohSeen { get; private set; }
+        public int SinnohOwned { get; private set; }
+        public int SinnohEvolved { get; private set; }
+        public int SinnohAllPoke { get; private set; }
+
+        public int OtherSeen { get; private set; }
+        public int OtherOwned { get; private set; }
+        public int OtherEvolved { get; private set; }
+        public int OtherAllPoke { get; private set; }
+        public static string Evolution_Left { get; set; } = "--------------Evolutions Left--------------" + Environment.NewLine;
+        public static int Evolution_Counter { get; set; }
+
+        //------------------------------------------------------------------------------------------------------
+
         public bool IsInBattle { get; private set; }
         public bool IsSurfing { get; private set; }
         public bool IsBiking { get; private set; }
@@ -37,10 +68,10 @@ namespace PROProtocol
         public bool CanUseCut { get; private set; }
         public bool CanUseSmashRock { get; private set; }
         public bool IsPrivateMessageOn { get; private set; } = true;
+
         public bool IsPartyInspectionOn { get; private set; } = true;
 
         public bool IsNpcInteractionsOn { get; private set; } = true;
-        public bool DisableMovingNpcInteractions = true;
 
         public int Money { get; private set; }
         public int Coins { get; private set; }
@@ -113,17 +144,15 @@ namespace PROProtocol
         public event Action<string> LogMessage;
         public event Action ActivePokemonChanged;
         public event Action OpponentChanged;
-
-        private const string Version = "Christmas_21_v2";
+        
+        private const string Version = "Christmas_21_v3";
 
         private GameConnection _connection;
         private DateTime _lastMovement;
-        private DateTime _lastVisPacket;
         private List<Direction> _movements = new List<Direction>();
         private Direction? _slidingDirection;
-        private int _surfAfterMovement; // 0 = no action needed, 1 = have to send surf packet, 2 = sent surf packet waiting for server response
+        private bool _surfAfterMovement;
         private Queue<object> _dialogResponses = new Queue<object>();
-        private bool _askTeamAfterBattle = false;
 
         private Timeout _movementTimeout = new Timeout();
         private Timeout _battleTimeout = new Timeout();
@@ -203,12 +232,6 @@ namespace PROProtocol
                 return;
 
             _movementTimeout.Update();
-            if (!_battleTimeout.Update() && _askTeamAfterBattle)
-            {
-                RequestTeam();
-                _askTeamAfterBattle = false;
-            }
-
             _loadingTimeout.Update();
             _mountingTimeout.Update();
             _teleportationTimeout.Update();
@@ -218,6 +241,12 @@ namespace PROProtocol
             _fishingTimeout.Update();
             _refreshingPCBox.Update();
             _moveRelearnerTimeout.Update();
+
+            if (!_battleTimeout.Update() && ActiveBattle != null && ActiveBattle.IsFinished)
+            {
+                ActiveBattle = null;
+                SendPacket("_");
+            }
 
             SendRegularPing();
             UpdateMovement();
@@ -244,37 +273,45 @@ namespace PROProtocol
             }
         }
 
-        private short _legitCounter = 0;
-        private uint _legitFlag = 1;
+        public void SendPokedexRequest()
+        {
+            try
+            {
+                SendPacket("p|.|1|0");
+            }
+            catch (Exception ex)
+            {
+                LogMessage?.Invoke("Error: " + ex.ToString());
+            }
+        }
+
+        private int _pingCurrentStep = 1;
+        private bool _isPingSwapped = false;
 
         private void SendRegularPing()
         {
-            if ((DateTime.UtcNow - _lastMovement).TotalSeconds > 6.0
-                || (DateTime.UtcNow - _lastVisPacket).TotalSeconds > 60.0)
+            if ((DateTime.UtcNow - _lastMovement).TotalSeconds >= 6)
             {
                 _lastMovement = DateTime.UtcNow;
-                _lastVisPacket = DateTime.UtcNow;
-
                 // DSSock.Update
                 int packetType;
-
-                bool isPingSwapped;
-                if (_legitCounter == 4)
+                if (_pingCurrentStep == 5)
                 {
-                    isPingSwapped = _legitFlag != 0;
-                    _legitCounter = -1;
+                    packetType = _isPingSwapped ? 2 : 1;
+                    _pingCurrentStep = 0;
                 }
                 else
                 {
-                    isPingSwapped = Rand.NextDouble() > 0.5;
+                    packetType = Rand.Next(2) + 1;
                 }
 
-                packetType = isPingSwapped ? 1 : 2;
-
+                if (packetType == 1)
+                {
+                    _isPingSwapped = !_isPingSwapped;
+                }
+                
+                _pingCurrentStep++;
                 SendPacket(packetType.ToString());
-                if (isPingSwapped)
-                    _legitFlag ^= 1u;
-                _legitCounter++;
             }
         }
 
@@ -290,7 +327,7 @@ namespace PROProtocol
                     UseItem(GroundMount.Id);
                     return;
                 }
-
+                
                 Direction direction = _movements[0];
                 _movements.RemoveAt(0);
 
@@ -304,8 +341,8 @@ namespace PROProtocol
                     }
                     else
                     {
-                        Npc battler = Map.Npcs.FirstOrDefault(npc => npc.CanBattle && npc.IsInLineOfSight(PlayerX, PlayerY, DisableMovingNpcInteractions));
-                        if (battler != null)
+                        Npc battler = Map.Npcs.FirstOrDefault(npc => npc.CanBattle && npc.IsInLineOfSight(PlayerX, PlayerY));
+                        if (battler != null && IsNpcInteractionsOn == true)
                         {
                             battler.CanBattle = false;
                             LogMessage?.Invoke("The NPC " + (battler.Name ?? battler.Id.ToString()) + " saw us, interacting...");
@@ -317,15 +354,15 @@ namespace PROProtocol
                     }
                 }
 
-                if (_movements.Count == 0 && _surfAfterMovement == 1)
+                if (_movements.Count == 0 && _surfAfterMovement)
                 {
                     _movementTimeout.Set(Rand.Next(750, 2000));
                 }
             }
-            if (!_movementTimeout.IsActive && _movements.Count == 0 && _surfAfterMovement == 1)
+            if (!_movementTimeout.IsActive && _movements.Count == 0 && _surfAfterMovement)
             {
+                _surfAfterMovement = false;
                 UseSurf();
-                _surfAfterMovement = 2;
             }
         }
 
@@ -431,16 +468,7 @@ namespace PROProtocol
                 }
                 else if (ScriptStatus == 3 || ScriptStatus == 4)
                 {
-                    var response = GetNextDialogResponse();
-                    if (ScriptStatus == 4 && response >= 1 && response <= 6)
-                    {
-                        // Asking for a pokemon database id 
-                        SendDialogResponse(Team[response - 1].DatabaseId);
-                    }
-                    else
-                    {
-                        SendDialogResponse(response);
-                    }
+                    SendDialogResponse(GetNextDialogResponse());
                     _dialogTimeout.Set();
                 }
             }
@@ -532,49 +560,43 @@ namespace PROProtocol
         public void SendAuthentication(string username, string password, Guid deviceId, string osInfo)
         {
             // DSSock.AttemptLogin
-            SendPacket("+|.|" + username
-                + "|.|" + password
-                + "|.|" + Version
-                + "|.|"
-                + Encryption.ReplaceSumByte(deviceId.ToString())
-                + "|.|" + osInfo);
+            // For test verionAccount
+            string os = "Windows 10  (10.0.19044.1466) 64bit";
+            LogMessage("Hwid after: " + Encryption.FixDeviceId(deviceId.ToString()) + ". OS: " + os + "");
+            SendPacket("+|.|" + username + "|.|" + password + "|.|" + Version + "|.|" + Encryption.FixDeviceId(deviceId.ToString()) + "|.|" + os);
+            // For main account
+            //SendPacket("+|.|" + username + "|.|" + password + "|.|" + Version + "|.|" + "4e17d31e-f448-467d-9a28-a7080f943f56" + "|.|" + os);
         }
 
-        public void SendUseItem(int id, int pokemonDBId = 0, int moveIndex = 0)
+        public void SendUseItem(int id, int pokemon = 0)
         {
             string toSend = "*|.|" + id;
-            if (pokemonDBId != 0)
+            if (pokemon != 0)
             {
-                toSend += "|.|" + pokemonDBId;
-            }
-            if (moveIndex != 0)
-            {
-                toSend += "|.|" + moveIndex;
+                toSend += "|.|" + Team[pokemon - 1].DatabaseId;
             }
             SendPacket(toSend);
         }
 
-        public void SendGiveItem(int pokemonDBid, int itemId)
+        public void SendGiveItem(int databaseId, int itemId)
         {
-            //<|.|32683455|441
-            SendPacket("<|.|" + pokemonDBid + "|" + itemId);
+            SendPacket("<|.|" + databaseId + "|" + itemId);
         }
 
-        public void SendTakeItem(int pokemonDBid)
+        public void SendTakeItem(int databaseId)
         {
-            //>|.|32683455
-            SendPacket(">|.|" + pokemonDBid);
+            SendPacket(">|.|" + databaseId);
         }
 
-        public void LearnMove(int pokemonDBid, int moveToForgetUid)
+        public void LearnMove(int pokemonUid, int moveToForgetUid)
         {
             _swapTimeout.Set();
-            SendLearnMove(pokemonDBid, moveToForgetUid);
+            SendLearnMove(pokemonUid, moveToForgetUid);
         }
 
-        private void SendLearnMove(int pokemonDBid, int moveToForgetUid)
+        private void SendLearnMove(int pokemonUid, int moveToForgetUid)
         {
-            SendPacket("^|.|" + pokemonDBid + "|.|" + moveToForgetUid);
+            SendPacket("^|.|" + (pokemonUid) + "|.|" + moveToForgetUid);
         }
 
         private void SendMovePokemonToPC(int pokemonUid)
@@ -593,9 +615,10 @@ namespace PROProtocol
             SendPacket("M|.|" + box + "|.|" + search);
         }
 
-        private void SendReleasePokemon(int pokemonDBid)
+        private void SendReleasePokemon(int pokemonUid)
         {
-            SendPacket("e|.|" + pokemonDBid);
+            SendMessage("/release " + pokemonUid + ", 1");
+            SendPacket("mb|.|/release " + pokemonUid);
         }
 
         private void SendPrivateMessageOn()
@@ -606,6 +629,16 @@ namespace PROProtocol
         private void SendPrivateMessageOff()
         {
             SendMessage("/pmoff");
+        }
+
+        private void SendPartyInspectionOn()
+        {
+            SendMessage("/in1");
+        }
+
+        private void SendPartyInspectionOff()
+        {
+            SendMessage("/in0");
         }
 
         private void SendPrivateMessageAway()
@@ -632,6 +665,32 @@ namespace PROProtocol
             return true;
         }
 
+        public bool PartyInspectionOn()
+        {
+            IsPartyInspectionOn = true;
+            SendPartyInspectionOn();
+            return true;
+        }
+
+        public bool PartyInspectionOff()
+        {
+            IsPartyInspectionOn = false;
+            SendPartyInspectionOff();
+            return true;
+        }
+
+        public bool NpcInteractionsOn()
+        {
+            IsNpcInteractionsOn = true;
+            return true;
+        }
+
+        public bool NpcInteractionsOff()
+        {
+            IsNpcInteractionsOn = false;
+            return true;
+        }
+
         // /pmaway does not seem to do anything
         public bool PrivateMessageAway()
         {
@@ -652,6 +711,7 @@ namespace PROProtocol
                 return false;
             }*/
             _refreshingPCBox.Set(Rand.Next(1500, 2000));
+            //SendReleasePokemon(pokemonUid);
             SendReleasePokemon(CurrentPCBox[boxPokemonId - 1].DatabaseId);
             return true;
         }
@@ -664,6 +724,7 @@ namespace PROProtocol
                 return false;
             }
             _refreshingPCBox.Set(Rand.Next(1500, 2000));
+            //SendReleasePokemon(pokemonUid);
             SendReleasePokemon(Team[pokemonUid - 1].DatabaseId);
             return true;
         }
@@ -688,7 +749,7 @@ namespace PROProtocol
             return RefreshPCBox(CurrentPCBoxId);
         }
 
-        /*private int GetPokemonPCUid(int box, int id)
+        private int GetPokemonPCUid(int box, int id)
         {
             if (box < 1 || box > 67 || id < 1 || id > 15)
             {
@@ -696,12 +757,12 @@ namespace PROProtocol
             }
             int result = (box - 1) * 15 + 6 + id;
             // ensures we cannot access a pokemon we do not have or know
-            if (CurrentPCBox == null || CurrentPCBox[id - 1].Uid != result || box != CurrentPCBoxId)
+            if (result > PCGreatestUid || CurrentPCBox == null || box != CurrentPCBoxId)
             {
                 return -1;
             }
             return result;
-        }*/
+        }
 
         public bool DepositPokemonToPC(int pokemonUid)
         {
@@ -715,10 +776,13 @@ namespace PROProtocol
 
         public bool WithdrawPokemonFromPC(int boxId, int boxPokemonId)
         {
+            /*int pcPokemonUid = GetPokemonPCUid(boxId, boxPokemonId);
+            if (pcPokemonUid == -1)*/
             if (boxId != CurrentPCBoxId)
             {
                 return false;
             }
+            //if (!IsPCOpen || pcPokemonUid < 7 || pcPokemonUid > PCGreatestUid || Team.Count >= 6)
             int pcPokemonUid = CurrentPCBox[boxPokemonId - 1].Uid;
             if (!IsPCOpen || pcPokemonUid < 7 || Team.Count >= 6)
             {
@@ -730,10 +794,14 @@ namespace PROProtocol
 
         public bool SwapPokemonFromPC(int boxId, int boxPokemonId, int teamPokemonUid)
         {
+            //int pcPokemonUid = GetPokemonPCUid(boxId, boxPokemonId);
+            //if (pcPokemonUid == -1)
             if (boxId != CurrentPCBoxId)
             {
                 return false;
             }
+            /*if (!IsPCOpen || pcPokemonUid < 7 || pcPokemonUid > PCGreatestUid
+                || teamPokemonUid < 1 || teamPokemonUid > 6 || Team.Count < teamPokemonUid)*/
             int pcPokemonUid = CurrentPCBox[boxPokemonId - 1].Uid;
             if (!IsPCOpen || pcPokemonUid < 7 || teamPokemonUid < 1
                 || teamPokemonUid > 6 || Team.Count < teamPokemonUid)
@@ -770,41 +838,31 @@ namespace PROProtocol
             _teleportationTimeout.Set();
         }
 
-        public void RequestTeam()
-        {
-            SendPacket("_");
-        }
-
-        public void RequestSpawnList()
-        {
-            SendPacket("k|.|" + MapName.ToLowerInvariant());
-        }
-
         public void UseAttack(int number)
         {
             SendAttack(number.ToString());
             _battleTimeout.Set();
         }
 
-        public void UseItem(int id, int pokemonUid = 0, int moveIndex = 0)
+        public void UseItem(int id, int pokemonUid = 0)
         {
             if (!(pokemonUid >= 0 && pokemonUid <= 6) || !HasItemId(id))
             {
                 return;
             }
             InventoryItem item = GetItemFromId(id);
-            if (item == null || item.Quantity == 0 || (item.Scope == 17 && moveIndex <= 0))
+            if (item == null || item.Quantity == 0)
             {
                 return;
             }
             if (pokemonUid == 0) // simple use
             {
-                if (!_itemUseTimeout.IsActive && !IsInBattle && item.CanBeUsedOutsideOfBattle)
+                if (!_itemUseTimeout.IsActive && !IsInBattle && (item.Scope == 8 || item.Scope == 10 || item.Scope == 15))
                 {
                     SendUseItem(id);
                     _itemUseTimeout.Set();
                 }
-                else if (!_battleTimeout.IsActive && IsInBattle && item.CanBeUsedInBattle)
+                else if (!_battleTimeout.IsActive && IsInBattle && item.Scope == 5)
                 {
                     SendAttack("item" + id);
                     _battleTimeout.Set();
@@ -812,26 +870,24 @@ namespace PROProtocol
             }
             else // use item on pokemon
             {
-                if (!_itemUseTimeout.IsActive && !IsInBattle && item.CanBeUsedOnPokemonOutsideOfBattle)
+                if (!_itemUseTimeout.IsActive && !IsInBattle
+                    && (item.Scope == 2 || item.Scope == 3 || item.Scope == 9
+                        || item.Scope == 13 || item.Scope == 14))
                 {
-                    SendUseItem(id, Team[pokemonUid - 1].DatabaseId, moveIndex);
+                    SendUseItem(id, pokemonUid);
                     _itemUseTimeout.Set();
                 }
-                else if (!_battleTimeout.IsActive && IsInBattle && item.CanBeUsedOnPokemonInBattle)
+                else if (!_battleTimeout.IsActive && IsInBattle && item.Scope == 2)
                 {
-                    //(|.|item528:28118282:3||.\
-                    string bItemCmd = "item" + id + ":" + Team[pokemonUid - 1].DatabaseId;
-                    if (moveIndex != 0)
-                        bItemCmd += ":" + moveIndex;
-                    SendAttack(bItemCmd);
+                    SendAttack("item" + id + ":" + Team[pokemonUid - 1].DatabaseId);
                     _battleTimeout.Set();
                 }
             }
         }
 
-        public bool GiveItemToPokemon(int pokemonUid, int itemId)
+        public bool GiveItemToPokemon(int databaseId, int itemId)
         {
-            if (!(pokemonUid >= 1 && pokemonUid <= Team.Count))
+            if (!(databaseId >= 1 && databaseId <= Team.Count))
             {
                 return false;
             }
@@ -840,24 +896,26 @@ namespace PROProtocol
             {
                 return false;
             }
-            if (!_itemUseTimeout.IsActive && !IsInBattle && item.CanBeHeld)
+            if (!_itemUseTimeout.IsActive && !IsInBattle
+                && (item.Scope == 2 || item.Scope == 3 || item.Scope == 9 || item.Scope == 13
+                || item.Scope == 14 || item.Scope == 5 || item.Scope == 12 || item.Scope == 6))
             {
-                SendGiveItem(Team[pokemonUid - 1].DatabaseId, itemId);
+                SendGiveItem(Team[databaseId - 1].DatabaseId, itemId);
                 _itemUseTimeout.Set();
                 return true;
             }
             return false;
         }
 
-        public bool TakeItemFromPokemon(int pokemonUid)
+        public bool TakeItemFromPokemon(int databaseId)
         {
-            if (!(pokemonUid >= 1 && pokemonUid <= Team.Count))
+            if (!(databaseId >= 1 && databaseId <= Team.Count))
             {
                 return false;
             }
-            if (!_itemUseTimeout.IsActive && Team[pokemonUid - 1].ItemHeld != "")
+            if (!_itemUseTimeout.IsActive && Team[databaseId - 1].ItemHeld != "")
             {
-                SendTakeItem(Team[pokemonUid - 1].DatabaseId);
+                SendTakeItem(Team[databaseId - 1].DatabaseId);
                 _itemUseTimeout.Set();
                 return true;
             }
@@ -926,7 +984,7 @@ namespace PROProtocol
 
         public InventoryItem GetItemFromName(string itemName)
         {
-            return Items.Find(i => i.Name?.Equals(itemName, StringComparison.InvariantCultureIgnoreCase) == true
+            return Items.Find(i => i.Name?.Equals(itemName, StringComparison.InvariantCultureIgnoreCase) == true 
                 && i.Quantity > 0);
         }
 
@@ -956,13 +1014,13 @@ namespace PROProtocol
                 LogMessage?.Invoke($"Mounting [{WaterMount.Name}]");
                 UseItem(WaterMount.Id);
             }
-
+            
             _mountingTimeout.Set();
         }
-
+        
         public void UseSurfAfterMovement()
         {
-            _surfAfterMovement = 1;
+            _surfAfterMovement = true;
         }
 
         public void RunFromBattle()
@@ -1014,30 +1072,38 @@ namespace PROProtocol
             return false;
         }
 
-        public bool PurchaseMove(int moveId)
+        public bool PurchaseMove(string moveName)
         {
-            if (MoveRelearner != null &&
-                MoveRelearner.Moves.Any(m => MovesManager.Instance.GetMoveId(m.Name) == moveId))
+            if (MoveRelearner != null && MoveRelearner.Moves.Any(move => move.Name.ToLowerInvariant() == moveName.ToLowerInvariant()))
             {
                 _moveRelearnerTimeout.Set();
-                SendPurchaseMove(MoveRelearner.SelectedPokemonUid, moveId);
+                SendPurchaseMove(MoveRelearner.SelectedPokemonUid, moveName);
                 return true;
             }
             return false;
         }
 
-        private void SendPurchaseMove(int pokemonUid, int moveId)
+        private void SendPurchaseMove(int pokemonUid, string moveName)
         {
             // DSSock.cs handles Move Relearn as below.
+
             if (MoveRelearner != null)
             {
-                if (MoveRelearner.IsEggMoves)
+                if (!MoveRelearner.IsEgg)
                 {
-                    SendPacket("b|.|" + pokemonUid + "|.|" + moveId);
+                    int moveId = MovesManager.Instance.GetMoveId(moveName);
+                    if (moveId != -1)
+                    {
+                        SendPacket("z|.|" + pokemonUid + "|.|" + moveId);
+                    }
                 }
                 else
                 {
-                    SendPacket("z|.|" + pokemonUid + "|.|" + moveId);
+                    int moveId = MovesManager.Instance.GetMoveId(moveName);
+                    if (moveId != -1)
+                    {
+                        SendPacket("b|.|" + pokemonUid + "|.|" + moveId);
+                    }
                 }
             }
         }
@@ -1072,7 +1138,7 @@ namespace PROProtocol
                 Map = map;
                 // DSSock.loadMap
                 SendPacket("-");
-                RequestSpawnList();
+                SendPacket("k|.|" + MapName.ToLowerInvariant());
 
                 CanUseCut = HasCutAbility();
                 CanUseSmashRock = HasRockSmashAbility();
@@ -1146,7 +1212,17 @@ namespace PROProtocol
         private void SendDialogResponse(int number)
         {
             // DSSock.ClickButton
-            SendPacket("R|.|" + number);
+            //SendPacket("R|.|" + ScriptId + "|.|" + number);
+#if DEBUG
+           
+#endif
+            if (ScriptStatus < 4)
+                SendPacket("R|.|" + number);
+            else
+            {
+                SendPacket("R|.|" + Team[number - 1].DatabaseId);
+            }
+
         }
 
         public void SendAcceptEvolution(int evolvingPokemonDBid)
@@ -1182,12 +1258,26 @@ namespace PROProtocol
                 packet = "U|.|" + packet.Substring(1);
             }
 
-            string[] data = packet.Split(new[] { "|.|" }, StringSplitOptions.None);
+            string[] data = packet.Split(new [] { "|.|" }, StringSplitOptions.None);
             string type = data[0].ToLowerInvariant();
             try
             {
                 switch (type)
                 {
+                    /*case "mb":
+                        MoneyTradeAccepter(packet);
+                        break;*/
+                    case "tu":
+                        AcceptTrade(packet);
+                        //LogMessage("Check if trade window opened or not!!!");
+                        break;
+                    case "t":
+                        InitiateMoneyTrade(packet);
+                        //LogMessage("Check if trade window opened or not!!!");
+                        break;
+                    case "p":
+                        OnPokedexInfo(packet);
+                        break;
                     case "5":
                         OnLoggedIn(data);
                         break;
@@ -1238,7 +1328,7 @@ namespace PROProtocol
                         OnScript(data);
                         break;
                     case "$":
-                        OnMountUpdate(data);
+                        OnBikingUpdate(data);
                         break;
                     case "%":
                         OnSurfingUpdate(data);
@@ -1266,7 +1356,7 @@ namespace PROProtocol
                         break;
                     case ".":
                         // DSSock.ProcessCommands
-                        RequestTeam();
+                        SendPacket("_");
                         break;
                     case "'":
                         // DSSock.ProcessCommands
@@ -1281,14 +1371,19 @@ namespace PROProtocol
                     case "y":
                         OnGuildData(data);
                         break;
+                    //case "k":
+                    //    OnMapSpawnData(data);
+                    //    break;
                     default:
 #if DEBUG
                         Console.WriteLine(" ^ unhandled /!\\");
+                        Console.WriteLine($"Type: ------ {type} ------");
+                        Console.WriteLine($"Packet: ------ {packet} ------");
 #endif
                         break;
                 }
             }
-            catch (System.FormatException)
+            catch(System.FormatException)
             {
                 LogMessage?.Invoke("Format error occurred(Probably server issue): " + packet);
             }
@@ -1309,7 +1404,7 @@ namespace PROProtocol
             SendMessage("/in1");
             // TODO: Add a setting to disable the party inspection (send /in0 instead).
             SendPacket(")");
-            RequestTeam();
+            SendPacket("_");
             SendPacket("g");
             SendPacket("p|.|l|0");
             SendRegularPing();
@@ -1372,7 +1467,7 @@ namespace PROProtocol
             _dialogTimeout.Set();
             _movements.Clear();
             string[] movements = data[1].Split(new[] { "|" }, StringSplitOptions.None);
-            foreach (var movement in movements)
+            foreach(var movement in movements)
             {
                 Move(DirectionExtensions.FromChar(movement[0]));
             }
@@ -1382,6 +1477,7 @@ namespace PROProtocol
 
         private void OnPlayerSync(string[] data)
         {
+            // S|.|Pewter City|24|36|1
             string[] mapData = data[1].Split(new[] { "|" }, StringSplitOptions.None);
 
             if (mapData.Length < 2)
@@ -1401,15 +1497,235 @@ namespace PROProtocol
             PositionUpdated?.Invoke(MapName, PlayerX, playerY);
         }
 
+        private void AcceptTrade(string data)
+        {
+            if (TradeGiver)
+            {
+                SendPacket("tac");
+            }
+            else if (TradeAccepter)
+            {
+                SendPacket("tac");
+            }
+        }
+
+        private void MoneyTradeAccepter(string data)
+        {
+            string[] newstr = data.Split(new[] { "|Y|" }, StringSplitOptions.None);
+            data = newstr[1].Replace("|", "");
+            if (TradeAccepter)
+            {
+                SendPacket("mb|.|" + data);
+            }
+        }
+
+        private void InitiateMoneyTrade(string data)
+        {
+            string UsernameToTradeWith = data.Replace("t|.|", "");
+            if(TradeGiver)
+            {
+                if(MoneyToTrade <= Money)
+                {
+                    if (MoneyToTrade > 0 && Money > 10000)
+                    {
+                        SendPacket("ta|.|m:" + MoneyToTrade);
+                    }
+                    else if (MoneyToTrade == -2 && Money > 10000)
+                    {
+                        SendPacket("ta|.|m:" + Money);
+                    }
+                    else if (MoneyToTrade == -1 && Money > 10000)
+                    {
+                        SendPacket("ta|.|m:" + (Money - new Random().Next(8000, 10000)));
+                    }
+                    else if(Money == 0)
+                    {
+                        LogMessage("No Money Left!!!");
+                    }
+                    else
+                    {
+                        LogMessage("No Money Left!!!");
+                    }
+                }
+                else
+                {
+                    LogMessage("Not Enough Money");
+                }
+                
+            }
+            else if(TradeAccepter)
+            {
+                SendPacket("tac");
+            }
+        }
+
+        private void OnPokedexInfo(string data)
+        {
+            string PokedexData = data.Replace("p|.|l|0|", "");
+            //Console.WriteLine($"New String: {PokedexData}");
+            string[] RefinedPokedexData = PokedexData.Split(new[] { "<" }, StringSplitOptions.None);
+            string[] temp, temp2;
+            string Evolution_Data = "002\r\n" + "003\r\n" + "005\r\n" + "006\r\n" + "008\r\n" + "009\r\n" + "011\r\n" + "012\r\n" + "014\r\n" + "015\r\n" + "017\r\n" + "018\r\n" + "020\r\n" + "022\r\n" + "024\r\n" + "025\r\n" + "026\r\n" + "028\r\n" + "030\r\n" + "031\r\n" + "033\r\n" + "034\r\n" + "035\r\n" + "036\r\n" + "038\r\n" + "039\r\n" + "040\r\n" + "042\r\n" + "044\r\n" + "045\r\n" + "047\r\n" + "049\r\n" + "051\r\n" + "053\r\n" + "055\r\n" + "057\r\n" + "059\r\n" + "061\r\n" + "062\r\n" + "064\r\n" + "065\r\n" + "067\r\n" + "068\r\n" + "070\r\n" + "071\r\n" + "073\r\n" + "075\r\n" + "076\r\n" + "078\r\n" + "080\r\n" + "082\r\n" + "085\r\n" + "087\r\n" + "089\r\n" + "091\r\n" + "093\r\n" + "094\r\n" + "097\r\n" + "099\r\n" + "101\r\n" + "103\r\n" + "105\r\n" + "106\r\n" + "107\r\n" + "110\r\n" + "112\r\n" + "113\r\n" + "117\r\n" + "119\r\n" + "121\r\n" + "122\r\n" + "124\r\n" + "125\r\n" + "126\r\n" + "130\r\n" + "134\r\n" + "135\r\n" + "136\r\n" + "139\r\n" + "141\r\n" + "143\r\n" + "148\r\n" + "149\r\n" + "153\r\n" + "154\r\n" + "156\r\n" + "157\r\n" + "159\r\n" + "160\r\n" + "162\r\n" + "164\r\n" + "166\r\n" + "168\r\n" + "169\r\n" + "171\r\n" + "176\r\n" + "178\r\n" + "180\r\n" + "181\r\n" + "182\r\n" + "183\r\n" + "184\r\n" + "185\r\n" + "186\r\n" + "188\r\n" + "189\r\n" + "192\r\n" + "195\r\n" + "196\r\n" + "197\r\n" + "199\r\n" + "202\r\n" + "205\r\n" + "208\r\n" + "210\r\n" + "212\r\n" + "217\r\n" + "219\r\n" + "221\r\n" + "224\r\n" + "226\r\n" + "229\r\n" + "230\r\n" + "232\r\n" + "233\r\n" + "237\r\n" + "242\r\n" + "247\r\n" + "248\r\n" + "253\r\n" + "254\r\n" + "256\r\n" + "257\r\n" + "259\r\n" + "260\r\n" + "262\r\n" + "264\r\n" + "266\r\n" + "267\r\n" + "268\r\n" + "269\r\n" + "271\r\n" + "272\r\n" + "274\r\n" + "275\r\n" + "277\r\n" + "279\r\n" + "281\r\n" + "282\r\n" + "284\r\n" + "286\r\n" + "288\r\n" + "289\r\n" + "291\r\n" + "292\r\n" + "294\r\n" + "295\r\n" + "297\r\n" + "301\r\n" + "305\r\n" + "306\r\n" + "308\r\n" + "310\r\n" + "315\r\n" + "317\r\n" + "319\r\n" + "321\r\n" + "323\r\n" + "326\r\n" + "329\r\n" + "330\r\n" + "332\r\n" + "334\r\n" + "340\r\n" + "342\r\n" + "344\r\n" + "346\r\n" + "348\r\n" + "350\r\n" + "354\r\n" + "356\r\n" + "358\r\n" + "362\r\n" + "364\r\n" + "365\r\n" + "367\r\n" + "368\r\n" + "372\r\n" + "373\r\n" + "375\r\n" + "376\r\n" + "388\r\n" + "389\r\n" + "391\r\n" + "392\r\n" + "394\r\n" + "395\r\n" + "397\r\n" + "398\r\n" + "400\r\n" + "402\r\n" + "404\r\n" + "405\r\n" + "407\r\n" + "409\r\n" + "411\r\n" + "413\r\n" + "414\r\n" + "416\r\n" + "419\r\n" + "421\r\n" + "423\r\n" + "424\r\n" + "426\r\n" + "428\r\n" + "429\r\n" + "430\r\n" + "432\r\n" + "435\r\n" + "437\r\n" + "444\r\n" + "445\r\n" + "448\r\n" + "450\r\n" + "452\r\n" + "454\r\n" + "457\r\n" + "460\r\n" + "461\r\n" + "462\r\n" + "463\r\n" + "464\r\n" + "465\r\n" + "466\r\n" + "467\r\n" + "468\r\n" + "469\r\n" + "470\r\n" + "471\r\n" + "472\r\n" + "473\r\n" + "474\r\n" + "475\r\n" + "476\r\n" + "477\r\n" + "478\r\n" + "496\r\n" + "497\r\n" + "499\r\n" + "500\r\n" + "502\r\n" + "503\r\n" + "505\r\n" + "507\r\n" + "508\r\n" + "510\r\n" + "512\r\n" + "514\r\n" + "516\r\n" + "518\r\n" + "520\r\n" + "521\r\n" + "523\r\n" + "525\r\n" + "526\r\n" + "528\r\n" + "530\r\n" + "533\r\n" + "534\r\n" + "536\r\n" + "537\r\n" + "541\r\n" + "542\r\n" + "544\r\n" + "545\r\n" + "547\r\n" + "549\r\n" + "552\r\n" + "553\r\n" + "555\r\n" + "558\r\n" + "560\r\n" + "563\r\n" + "565\r\n" + "567\r\n" + "569\r\n" + "571\r\n" + "573\r\n" + "575\r\n" + "576\r\n" + "578\r\n" + "579\r\n" + "581\r\n" + "583\r\n" + "584\r\n" + "586\r\n" + "589\r\n" + "591\r\n" + "593\r\n" + "596\r\n" + "598\r\n" + "600\r\n" + "601\r\n" + "603\r\n" + "604\r\n" + "606\r\n" + "608\r\n" + "609\r\n" + "611\r\n" + "612\r\n" + "614\r\n" + "617\r\n" + "620\r\n" + "623\r\n" + "625\r\n" + "628\r\n" + "630\r\n" + "634\r\n" + "635\r\n" + "637\r\n" + "651\r\n" + "652\r\n" + "654\r\n" + "655\r\n" + "657\r\n" + "658\r\n" + "660\r\n" + "662\r\n" + "663\r\n" + "665\r\n" + "666\r\n" + "668\r\n" + "670\r\n" + "671\r\n" + "673\r\n" + "675\r\n" + "678\r\n" + "680\r\n" + "681\r\n" + "683\r\n" + "685\r\n" + "687\r\n" + "689\r\n" + "691\r\n" + "693\r\n" + "695\r\n" + "697\r\n" + "699\r\n" + "700\r\n" + "705\r\n" + "706\r\n" + "709\r\n" + "711\r\n" + "713\r\n" + "715\r\n";
+
+            for (int i = 0; i < RefinedPokedexData.Length; i++)
+            {
+                RefinedPokedexData[i] = RefinedPokedexData[i].PadLeft(5, '0');
+            }
+
+            for (int i = 0; i < RefinedPokedexData.Length; i++)
+            {
+                temp2 = RefinedPokedexData[i].Split(new[] { ">" }, StringSplitOptions.None);
+                if (Evolution_Data.Contains(temp2[0]))
+                {
+                    if (!(temp2[1] == "3"))
+                    {
+                        Evolution_Counter++;
+                        Evolution_Left = Evolution_Left + temp2[0] + Environment.NewLine;
+                    }
+                }
+
+            }
+
+            KantoAllPoke = 151;
+            JohtoAllPoke = 100;
+            HoennAllPoke = 135;
+            SinnohAllPoke = 107;
+            OtherAllPoke = 314;
+
+            KantoSeen = 0;
+            KantoOwned = 0;
+            KantoEvolved = 0;
+
+            JohtoSeen = 0;
+            JohtoOwned = 0;
+            JohtoEvolved = 0;
+
+            HoennSeen = 0;
+            HoennOwned = 0;
+            HoennEvolved = 0;
+
+            SinnohSeen = 0;
+            SinnohOwned = 0;
+            SinnohEvolved = 0;
+
+            OtherSeen = 0;
+            OtherOwned = 0;
+            OtherEvolved = 0;
+
+            for (int i = 0; i < RefinedPokedexData.Length; i++)
+            {
+                temp = RefinedPokedexData[i].Split(new[] { ">" }, StringSplitOptions.None);
+                if (Convert.ToInt32(temp[0]) >= 1 && Convert.ToInt32(temp[0]) <= 151)
+                {
+                    if (Convert.ToInt32(temp[1]) == 1)
+                    {
+                        KantoSeen += 1;
+                    }
+                    else if (Convert.ToInt32(temp[1]) == 2)
+                    {
+                        KantoSeen += 1;
+                        KantoOwned += 1;
+                    }
+                    else if (Convert.ToInt32(temp[1]) == 3)
+                    {
+                        KantoSeen += 1;
+                        KantoOwned += 1;
+                        KantoEvolved += 1;
+                    }
+                }
+                else if (Convert.ToInt32(temp[0]) >= 152 && Convert.ToInt32(temp[0]) <= 251)
+                {
+                    if (Convert.ToInt32(temp[1]) == 1)
+                    {
+                        JohtoSeen += 1;
+                    }
+                    else if (Convert.ToInt32(temp[1]) == 2)
+                    {
+                        JohtoSeen += 1;
+                        JohtoOwned += 1;
+                    }
+                    else if (Convert.ToInt32(temp[1]) == 3)
+                    {
+                        JohtoSeen += 1;
+                        JohtoOwned += 1;
+                        JohtoEvolved += 1;
+                    }
+                }
+                else if (Convert.ToInt32(temp[0]) >= 252 && Convert.ToInt32(temp[0]) <= 386)
+                {
+                    if (Convert.ToInt32(temp[1]) == 1)
+                    {
+                        HoennSeen += 1;
+                    }
+                    else if (Convert.ToInt32(temp[1]) == 2)
+                    {
+                        HoennSeen += 1;
+                        HoennOwned += 1;
+                    }
+                    else if (Convert.ToInt32(temp[1]) == 3)
+                    {
+                        HoennSeen += 1;
+                        HoennOwned += 1;
+                        HoennEvolved += 1;
+                    }
+                }
+                else if (Convert.ToInt32(temp[0]) >= 387 && Convert.ToInt32(temp[0]) <= 493)
+                {
+                    if (Convert.ToInt32(temp[1]) == 1)
+                    {
+                        SinnohSeen += 1;
+                    }
+                    else if (Convert.ToInt32(temp[1]) == 2)
+                    {
+                        SinnohSeen += 1;
+                        SinnohOwned += 1;
+                    }
+                    else if (Convert.ToInt32(temp[1]) == 3)
+                    {
+                        SinnohSeen += 1;
+                        SinnohOwned += 1;
+                        SinnohEvolved += 1;
+                    }
+                }
+                else if (Convert.ToInt32(temp[0]) >= 494 && Convert.ToInt32(temp[0]) <= 807)
+                {
+                    if (Convert.ToInt32(temp[1]) == 1)
+                    {
+                        OtherSeen += 1;
+                    }
+                    else if (Convert.ToInt32(temp[1]) == 2)
+                    {
+                        OtherSeen += 1;
+                        OtherOwned += 1;
+                    }
+                    else if (Convert.ToInt32(temp[1]) == 3)
+                    {
+                        OtherSeen += 1;
+                        OtherOwned += 1;
+                        OtherEvolved += 1;
+                    }
+                }
+
+                //Console.WriteLine(mapData[i]);
+            }
+
+        }
+
         private void OnPlayerInfos(string[] data)
         {
             string[] playerData = data[1].Split('|');
             PlayerName = playerData[0];
-            PokedexOwned = Convert.ToInt32(playerData[4]);
-            PokedexSeen = Convert.ToInt32(playerData[5]);
-            PokedexEvolved = Convert.ToInt32(playerData[6]);
-            IsMember = playerData[10] == "1";
-            if (GuildId != -1 && !_requestedGuildData.Contains(GuildId))
+            PokedexOwned = Convert.ToInt32(playerData[1]);
+            PokedexSeen = Convert.ToInt32(playerData[2]);
+            PokedexEvolved = Convert.ToInt32(playerData[3]);
+            IsMember = playerData[6] == "1";
+            //LogMessage?.Invoke("Player info packet:");
+            // For test verion
+            /*for (int i=0; i<playerData.Length; i++)
+            {
+                LogMessage?.Invoke("playerData["+i+"]: "+playerData[i]);
+            }*/
+            if (GuildId != -1 && !_requestedGuildData.Contains(GuildId)) 
             {
                 SendRequestGuildData(GuildId);
                 _requestedGuildData.Add(GuildId);
@@ -1424,6 +1740,28 @@ namespace PROProtocol
             {
                 GuildId = int.Parse(data[1]);
             }
+        }
+
+        private void OnMapSpawnData(string[] data)
+        {
+            // k|.|Route 4,ci21,i24,41,23,c163,39,ci19,m0,s41,sci60,s79,ms0,s0,
+            // c = caught
+            // i = item
+            // m = membership
+            // s = surf
+            data = data[1].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            string mapName = data[0];
+
+            if (data[1] == "none!")
+            {
+                return;
+            }
+
+            foreach (var pokemonData in data.Skip(1))
+            {
+
+            }
+
         }
 
         private void OnUpdateTime(string[] data)
@@ -1536,7 +1874,7 @@ namespace PROProtocol
             _movements.Clear();
             _slidingDirection = null;
 
-            _battleTimeout.Set(Rand.Next(4000, 6000));
+            _battleTimeout.Set(Rand.Next(4000, 5000));
             _fishingTimeout.Cancel();
 
             BattleStarted?.Invoke();
@@ -1549,11 +1887,6 @@ namespace PROProtocol
                 {
                     BattleMessage?.Invoke(I18n.Replace(message));
                 }
-            }
-
-            if (!ActiveBattle.AlreadyCaught)
-            {
-                RequestSpawnList();
             }
 
             BattleUpdated?.Invoke();
@@ -1582,19 +1915,19 @@ namespace PROProtocol
 
             if (ActiveBattle.IsFinished)
             {
-                _battleTimeout.Set(Rand.Next(2500, 5000));
+                //_battleTimeout.Set(Rand.Next(4000, 7000));
+                _battleTimeout.Set(Rand.Next(1000, 2000));
             }
             else
             {
-                _battleTimeout.Set(Rand.Next(2000, 4000));
+                //_battleTimeout.Set(Rand.Next(4000, 7000));
+                _battleTimeout.Set(Rand.Next(1000, 2000));
             }
 
             if (ActiveBattle.IsFinished)
             {
                 IsInBattle = false;
-                ActiveBattle = null;
                 BattleEnded?.Invoke();
-                _askTeamAfterBattle = true;
             }
         }
 
@@ -1651,7 +1984,7 @@ namespace PROProtocol
                     DialogOpened?.Invoke(message, new string[0]);
                 }
             }
-
+            
             IsScriptActive = true;
             _dialogTimeout.Set(Rand.Next(1500, 4000));
             ScriptId = id;
@@ -1667,24 +2000,18 @@ namespace PROProtocol
             }
         }
 
-        private void OnMountUpdate(string[] data)
+        private void OnBikingUpdate(string[] data)
         {
-            MountId = int.Parse(data[1]);
-            if (MountId != 0)
+            if (data[1] != "0")
             {
-                IsBiking = !(_surfAfterMovement == 2);
-                IsSurfing = _surfAfterMovement == 2;
+                IsBiking = true;
+                IsSurfing = false;
             }
             else
             {
                 IsBiking = false;
                 IsSurfing = false;
             }
-            if (IsSurfing)
-            {
-                Move(Map.GetWaterDirectionFrom(PlayerX, PlayerY));
-            }
-            _surfAfterMovement = 0;
             _mountingTimeout.Set(Rand.Next(500, 1000));
             _itemUseTimeout.Cancel();
         }
@@ -2077,6 +2404,7 @@ namespace PROProtocol
                 InvalidPacket?.Invoke(data[0] + "|.|" + data[1], "Received an invalid PC Box size");
                 return;
             }
+            string[] pokemonListDatas = body[2].Split(new[] { "\r\n" }, StringSplitOptions.None);
             if (body.Length < 1)
             {
                 InvalidPacket?.Invoke(data[0] + "|.|" + data[1], "Received an empty box");
@@ -2115,7 +2443,7 @@ namespace PROProtocol
             OpenedShop = null;
             MoveRelearner = null;
             _movements.Clear();
-            _surfAfterMovement = 0;
+            _surfAfterMovement = false;
             _slidingDirection = null;
             _dialogResponses.Clear();
             _movementTimeout.Cancel();
@@ -2141,36 +2469,6 @@ namespace PROProtocol
             {
                 _mapClient.DownloadMap(MapName);
             }
-        }
-        private void SendPartyInspectionOn()
-        {
-            SendMessage("/in1");
-        }
-        public bool PartyInspectionOn()
-        {
-            IsPartyInspectionOn = true;
-            SendPartyInspectionOn();
-            return true;
-        }
-        private void SendPartyInspectionOff()
-        {
-            SendMessage("/in0");
-        }
-        public bool PartyInspectionOff()
-        {
-            IsPartyInspectionOn = false;
-            SendPartyInspectionOff();
-            return true;
-        }
-        public bool NpcInteractionsOn()
-        {
-            IsNpcInteractionsOn = true;
-            return true;
-        }
-        public bool NpcInteractionsOff()
-        {
-            IsNpcInteractionsOn = false;
-            return true;
         }
     }
 }
