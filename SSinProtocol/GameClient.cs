@@ -1874,7 +1874,8 @@ namespace PROProtocol
             _movements.Clear();
             _slidingDirection = null;
 
-            _battleTimeout.Set(Rand.Next(4000, 5000));
+            _battleTimeout.Set(Rand.Next(1000, 2000));
+            //_battleTimeout.Set(Rand.Next(4000, 5000));
             _fishingTimeout.Cancel();
 
             BattleStarted?.Invoke();
@@ -1916,12 +1917,12 @@ namespace PROProtocol
             if (ActiveBattle.IsFinished)
             {
                 //_battleTimeout.Set(Rand.Next(4000, 7000));
-                _battleTimeout.Set(Rand.Next(1000, 2000));
+                _battleTimeout.Set(Rand.Next(500, 1000));
             }
             else
             {
                 //_battleTimeout.Set(Rand.Next(4000, 7000));
-                _battleTimeout.Set(Rand.Next(1000, 2000));
+                _battleTimeout.Set(Rand.Next(500, 1000));
             }
 
             if (ActiveBattle.IsFinished)

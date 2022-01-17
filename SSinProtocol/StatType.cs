@@ -7,6 +7,7 @@
         Defence,
         SpAttack,
         SpDefence,
-        Speed
+        Speed,
+        Total
     }
 }

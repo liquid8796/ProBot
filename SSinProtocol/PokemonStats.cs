@@ -11,6 +11,7 @@ namespace PROProtocol
         public int SpAttack { get; set; }
         public int SpDefence { get; set; }
         public int Speed { get; set; }
+        public int Total { get; set; }
 
         public PokemonStats()
         {
@@ -23,6 +24,7 @@ namespace PROProtocol
             Speed = Convert.ToInt32(data[index++]);
             SpAttack = Convert.ToInt32(data[index++]);
             SpDefence = Convert.ToInt32(data[index++]);
+            
             if (health == -1)
             {
                 Health = Convert.ToInt32(data[index]);
@@ -31,6 +33,7 @@ namespace PROProtocol
             {
                 Health = health;
             }
+            Total = Attack + Defence + Speed + SpAttack + SpDefence + Health;
         }
 
         public int GetStat(StatType stat)
@@ -49,6 +52,8 @@ namespace PROProtocol
                     return SpDefence;
                 case StatType.Speed:
                     return Speed;
+                case StatType.Total:
+                    return Total;
             }
             return 0;
         }

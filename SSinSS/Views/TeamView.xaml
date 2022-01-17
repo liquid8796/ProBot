@@ -22,7 +22,7 @@
                         <Setter Property="ToolTipService.InitialShowDelay" Value="0"/>
                         <Setter Property="Control.ToolTip">
                             <Setter.Value>
-                                <Canvas Height="300" Width="430">
+                                <Canvas Height="320" Width="430">
                                     <Canvas.Style>
                                         <Style TargetType="Canvas">
                                             <Setter Property="Background" Value="#FF1F2225"/>
@@ -178,15 +178,16 @@
                                         <TextBlock Text="IV:" Canvas.Left="356" FontSize="15" Foreground="#D48600" Canvas.Top="108"/>
                                         <TextBlock Text="EV:" Canvas.Left="379" FontSize="15" Foreground="#00D4D4" Canvas.Top="108"/>
 
-                                        <Canvas Canvas.Top="128" Canvas.Left="269" Width="135" Height="126" Background="#171717">
+                                        <Canvas Canvas.Top="128" Canvas.Left="269" Width="135" Height="146" Background="#171717">
                                             <TextBlock Text="ATK:" Canvas.Left="3" FontSize="15" Foreground="White"/>
                                             <TextBlock Text="DEF:" Canvas.Top="21" Canvas.Left="3" FontSize="15" Foreground="White"/>
                                             <TextBlock Text="SPD:" Canvas.Top="41" Canvas.Left="3" FontSize="15" Foreground="White"/>
                                             <TextBlock Text="SPATK:" Canvas.Top="61" Canvas.Left="3" FontSize="15" Foreground="White"/>
                                             <TextBlock Text="SPDEF:" Canvas.Top="81" Canvas.Left="3" FontSize="15" Foreground="White"/>
                                             <TextBlock Text="HP:" Canvas.Top="101" Canvas.Left="3" FontSize="15" Foreground="White"/>
+                                            <TextBlock Text="Total:" Canvas.Top="121" Canvas.Left="3" FontSize="15" Foreground="White"/>
 
-                                            <TextBlock Text="{Binding Stats.Attack}" Canvas.Right="52" FontSize="15">
+                                            <TextBlock Text="{Binding Stats.Attack}" Canvas.Right="56" FontSize="15">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Foreground" Value="White"/>
@@ -219,7 +220,7 @@
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
-                                            <TextBlock Text="{Binding Stats.Defence}" Canvas.Top="21" Canvas.Right="52" FontSize="15">
+                                            <TextBlock Text="{Binding Stats.Defence}" Canvas.Top="21" Canvas.Right="56" FontSize="15">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Foreground" Value="White"/>
@@ -252,7 +253,7 @@
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
-                                            <TextBlock Text="{Binding Stats.Speed}" Canvas.Top="41" Canvas.Right="52" FontSize="15">
+                                            <TextBlock Text="{Binding Stats.Speed}" Canvas.Top="41" Canvas.Right="56" FontSize="15">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Foreground" Value="White"/>
@@ -285,7 +286,7 @@
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
-                                            <TextBlock Text="{Binding Stats.SpAttack}" Canvas.Top="61" Canvas.Right="52" FontSize="15">
+                                            <TextBlock Text="{Binding Stats.SpAttack}" Canvas.Top="61" Canvas.Right="56" FontSize="15">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Foreground" Value="White"/>
@@ -318,7 +319,7 @@
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
-                                            <TextBlock Text="{Binding Stats.SpDefence}" Canvas.Top="81" Canvas.Right="52" FontSize="15">
+                                            <TextBlock Text="{Binding Stats.SpDefence}" Canvas.Top="81" Canvas.Right="56" FontSize="15">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Foreground" Value="White"/>
@@ -351,7 +352,8 @@
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
-                                            <TextBlock Text="{Binding Stats.Health}" Canvas.Top="101" Canvas.Right="52" FontSize="15" Foreground="White"/>
+                                            <TextBlock Text="{Binding Stats.Health}" Canvas.Top="101" Canvas.Right="56" FontSize="15" Foreground="White"/>
+                                            <TextBlock Text="{Binding Stats.Total}" Canvas.Top="121" Canvas.Right="56" FontSize="15" Foreground="White"/>
 
                                             <TextBlock Text="{Binding IV.Attack}" Canvas.Right="33" FontSize="15" Foreground="#D48600"/>
                                             <TextBlock Text="{Binding IV.Defence}" Canvas.Top="21" Canvas.Right="33" FontSize="15" Foreground="#D48600"/>
@@ -359,6 +361,7 @@
                                             <TextBlock Text="{Binding IV.SpAttack}" Canvas.Top="61" Canvas.Right="33" FontSize="15" Foreground="#D48600"/>
                                             <TextBlock Text="{Binding IV.SpDefence}" Canvas.Top="81" Canvas.Right="33" FontSize="15" Foreground="#D48600"/>
                                             <TextBlock Text="{Binding IV.Health}" Canvas.Top="101" Canvas.Right="33" FontSize="15" Foreground="#D48600"/>
+                                            <TextBlock Text="{Binding IV.Total}" Canvas.Top="121" Canvas.Right="33" FontSize="15" Foreground="#D48600"/>
 
                                             <TextBlock Text="{Binding EV.Attack}" Canvas.Right="6" FontSize="15" Foreground="#00D4D4"/>
                                             <TextBlock Text="{Binding EV.Defence}" Canvas.Top="21" Canvas.Right="6" FontSize="15" Foreground="#00D4D4"/>
@@ -366,6 +369,7 @@
                                             <TextBlock Text="{Binding EV.SpAttack}" Canvas.Top="61" Canvas.Right="6" FontSize="15" Foreground="#00D4D4"/>
                                             <TextBlock Text="{Binding EV.SpDefence}" Canvas.Top="81" Canvas.Right="6" FontSize="15" Foreground="#00D4D4"/>
                                             <TextBlock Text="{Binding EV.Health}" Canvas.Top="101" Canvas.Right="6" FontSize="15" Foreground="#00D4D4"/>
+                                            <TextBlock Text="{Binding EV.Total}" Canvas.Top="121" Canvas.Right="6" FontSize="15" Foreground="#00D4D4"/>
                                         </Canvas>
                                     </Canvas>
                                 </Canvas>
