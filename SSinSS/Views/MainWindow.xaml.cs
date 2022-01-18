@@ -123,7 +123,6 @@ namespace PROShine
             if (App.IsBeta)
             {
                 LogMessage("This is a BETA version. Bugs, crashes and bans might occur.");
-                LogMessage("Report any problem on the forums and join the Discord chat for the latest information.");
             }
 
             Task.Run(() => UpdateClients());

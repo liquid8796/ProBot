@@ -327,6 +327,12 @@ namespace PROProtocol
                     UseItem(GroundMount.Id);
                     return;
                 }
+                else if(GroundMount != null && !_itemUseTimeout.IsActive && IsBiking && !IsSurfing && Map.IsOutside)
+                {
+                    LogMessage?.Invoke($"Unmounting [{GroundMount.Name}]");
+                    UseItem(GroundMount.Id);
+                    return;
+                }
                 
                 Direction direction = _movements[0];
                 _movements.RemoveAt(0);

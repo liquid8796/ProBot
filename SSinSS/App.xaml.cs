@@ -19,12 +19,12 @@ namespace PROShine
             Assembly assembly = typeof(App).Assembly;
             AssemblyName assemblyName = assembly.GetName();
             Name = assemblyName.Name;
-            Version = assemblyName.Version.ToString(3) + "-beta_Test_d";
+            Version = assemblyName.Version.ToString(3) + " - Beta";
             IsBeta = true;
             Author = ((AssemblyCompanyAttribute)Attribute.GetCustomAttribute(assembly, typeof(AssemblyCompanyAttribute), false)).Company;
             Description = ((AssemblyDescriptionAttribute)Attribute.GetCustomAttribute(assembly, typeof(AssemblyDescriptionAttribute), false)).Description;
         }
-        public void SSinSS_Startup(object sender, StartupEventArgs e)
+        public void ProCatchem_Startup(object sender, StartupEventArgs e)
         {
             Args = e.Args;
         }
