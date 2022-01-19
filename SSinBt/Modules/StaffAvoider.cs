@@ -47,7 +47,8 @@ namespace PROBot.Modules
 
         private void Game_PlayerAdded(PlayerInfos player)
         {
-            if (player.Name.Contains("[") || player.Name.Contains("Daredevil") || player.Name.Contains("Fluffles") || player.Name.Contains("Qeight") || player.Name.Contains("Senrosia"))
+            //if (player.Name.Contains("[") || player.Name.Contains("Daredevil") || player.Name.Contains("Fluffles") || player.Name.Contains("Qeight") || player.Name.Contains("Senrosia"))
+            if (isStaffInList(player.Name))
             {
                 int distance = _bot.Game.DistanceTo(player.PosX, player.PosY);
                 string message = player.Name + " appears on the map at " + distance + " cells from you";

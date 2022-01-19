@@ -354,7 +354,7 @@ namespace PROProtocol
                             LogMessage?.Invoke("The NPC " + (battler.Name ?? battler.Id.ToString()) + " saw us, interacting...");
                             _npcBattler = battler;
                             int distanceFromBattler = DistanceBetween(PlayerX, PlayerY, battler.PositionX, battler.PositionY);
-                            _npcBattleTimeout.Set(Rand.Next(100, 500) + distanceFromBattler * 250);
+                            _npcBattleTimeout.Set(Rand.Next(100, 200) + distanceFromBattler * 250);
                             ClearPath();
                         }
                     }
@@ -362,7 +362,8 @@ namespace PROProtocol
 
                 if (_movements.Count == 0 && _surfAfterMovement)
                 {
-                    _movementTimeout.Set(Rand.Next(750, 2000));
+                    _movementTimeout.Set(Rand.Next(500, 600));
+                    //_movementTimeout.Set(Rand.Next(750, 2000));
                 }
             }
             if (!_movementTimeout.IsActive && _movements.Count == 0 && _surfAfterMovement)
@@ -1452,10 +1453,6 @@ namespace PROProtocol
                 PlayerX = playerX;
                 PlayerY = playerY;
                 LoadMap(map);
-                for(int i=0; i<data.Length; i++)
-                {
-                    LogMessage("OnPlayerPosition["+i+"]: " + data[i]);
-                }
                 
                 IsOnGround = (mapData[3] == "1");
                 /*if (Convert.ToInt32(mapData[4]) == 1)
@@ -1488,10 +1485,6 @@ namespace PROProtocol
 
         private void OnPlayerSync(string[] data)
         {
-            for (int i = 0; i < data.Length; i++)
-            {
-                LogMessage("OnPlayerSync[" + i + "]: " + data[i]);
-            }
             // S|.|Pewter City|24|36|1
             string[] mapData = data[1].Split(new[] { "|" }, StringSplitOptions.None);
 
@@ -2019,7 +2012,11 @@ namespace PROProtocol
 
         private void OnBikingUpdate(string[] data)
         {
-            if (data[1] == "950")
+            /*for(int i=0; i<data.Length; i++)
+            {
+                LogMessage("OnBikingUpdate[" + i + "]: " + data[i]);
+            }*/
+            if (data[1] == "950" || data[1] == "2305")
             {
                 IsBiking = true;
                 IsSurfing = false;
@@ -2455,7 +2452,7 @@ namespace PROProtocol
         {
             mapName = MapClient.RemoveExtension(mapName);
 
-            _loadingTimeout.Set(Rand.Next(1500, 2000));
+            _loadingTimeout.Set(Rand.Next(1000, 1100));
             //_loadingTimeout.Set(Rand.Next(1500, 4000));
 
             OpenedShop = null;
