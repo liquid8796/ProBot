@@ -327,12 +327,12 @@ namespace PROProtocol
                     UseItem(GroundMount.Id);
                     return;
                 }
-                else if(GroundMount != null && !_itemUseTimeout.IsActive && IsBiking && !IsSurfing && Map.IsOutside)
+                /*else if(GroundMount != null && !_itemUseTimeout.IsActive && IsBiking && !IsSurfing && Map.IsOutside)
                 {
                     LogMessage?.Invoke($"Unmounting [{GroundMount.Name}]");
                     UseItem(GroundMount.Id);
                     return;
-                }
+                }*/
                 
                 Direction direction = _movements[0];
                 _movements.RemoveAt(0);
@@ -354,7 +354,7 @@ namespace PROProtocol
                             LogMessage?.Invoke("The NPC " + (battler.Name ?? battler.Id.ToString()) + " saw us, interacting...");
                             _npcBattler = battler;
                             int distanceFromBattler = DistanceBetween(PlayerX, PlayerY, battler.PositionX, battler.PositionY);
-                            _npcBattleTimeout.Set(Rand.Next(1000, 2000) + distanceFromBattler * 250);
+                            _npcBattleTimeout.Set(Rand.Next(100, 500) + distanceFromBattler * 250);
                             ClearPath();
                         }
                     }
@@ -1452,12 +1452,17 @@ namespace PROProtocol
                 PlayerX = playerX;
                 PlayerY = playerY;
                 LoadMap(map);
+                for(int i=0; i<data.Length; i++)
+                {
+                    LogMessage("OnPlayerPosition["+i+"]: " + data[i]);
+                }
+                
                 IsOnGround = (mapData[3] == "1");
-                if (Convert.ToInt32(mapData[4]) == 1)
+                /*if (Convert.ToInt32(mapData[4]) == 1)
                 {
                     IsSurfing = true;
                     IsBiking = false;
-                }
+                }*/
                 // DSSock.sendSync
                 SendPacket("S");
             }
@@ -1483,6 +1488,10 @@ namespace PROProtocol
 
         private void OnPlayerSync(string[] data)
         {
+            for (int i = 0; i < data.Length; i++)
+            {
+                LogMessage("OnPlayerSync[" + i + "]: " + data[i]);
+            }
             // S|.|Pewter City|24|36|1
             string[] mapData = data[1].Split(new[] { "|" }, StringSplitOptions.None);
 
@@ -1880,7 +1889,7 @@ namespace PROProtocol
             _movements.Clear();
             _slidingDirection = null;
 
-            _battleTimeout.Set(Rand.Next(1000, 2000));
+            _battleTimeout.Set(Rand.Next(100, 200));
             //_battleTimeout.Set(Rand.Next(4000, 5000));
             _fishingTimeout.Cancel();
 
@@ -1923,12 +1932,12 @@ namespace PROProtocol
             if (ActiveBattle.IsFinished)
             {
                 //_battleTimeout.Set(Rand.Next(4000, 7000));
-                _battleTimeout.Set(Rand.Next(500, 1000));
+                _battleTimeout.Set(Rand.Next(100, 200));
             }
             else
             {
                 //_battleTimeout.Set(Rand.Next(4000, 7000));
-                _battleTimeout.Set(Rand.Next(500, 1000));
+                _battleTimeout.Set(Rand.Next(100, 200));
             }
 
             if (ActiveBattle.IsFinished)
@@ -1993,7 +2002,8 @@ namespace PROProtocol
             }
             
             IsScriptActive = true;
-            _dialogTimeout.Set(Rand.Next(1500, 4000));
+            _dialogTimeout.Set(Rand.Next(100, 200));
+            //_dialogTimeout.Set(Rand.Next(1500, 4000));
             ScriptId = id;
             ScriptStatus = status;
         }
@@ -2009,15 +2019,15 @@ namespace PROProtocol
 
         private void OnBikingUpdate(string[] data)
         {
-            if (data[1] != "0")
+            if (data[1] == "950")
             {
                 IsBiking = true;
                 IsSurfing = false;
             }
-            else
+            else if (data[1] == "2287")
             {
                 IsBiking = false;
-                IsSurfing = false;
+                IsSurfing = true;
             }
             _mountingTimeout.Set(Rand.Next(500, 1000));
             _itemUseTimeout.Cancel();
@@ -2025,7 +2035,7 @@ namespace PROProtocol
 
         private void OnSurfingUpdate(string[] data)
         {
-            if (data[1] == "1")
+            if (data[1] == "2287")
             {
                 IsSurfing = true;
                 IsBiking = false;
@@ -2445,7 +2455,8 @@ namespace PROProtocol
         {
             mapName = MapClient.RemoveExtension(mapName);
 
-            _loadingTimeout.Set(Rand.Next(1500, 4000));
+            _loadingTimeout.Set(Rand.Next(1500, 2000));
+            //_loadingTimeout.Set(Rand.Next(1500, 4000));
 
             OpenedShop = null;
             MoveRelearner = null;

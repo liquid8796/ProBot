@@ -1,5 +1,6 @@
 ﻿using PROProtocol;
 using System;
+using System.Collections.Generic;
 
 namespace PROBot.Modules
 {
@@ -8,6 +9,12 @@ namespace PROBot.Modules
         public event Action<bool> StateChanged;
 
         private bool _isEnabled = false;
+        private List<string> staffs = new List<string> 
+        {
+            "[", "Daredevil", "Fluffles", "Qeight", "Senrosia", "Dakivid", "SchattenDialga", "PreHax", "Walrosskastanie", "Theminho", "Alex", "Saxy", "Markoscrete2",
+            "Fantazi0", "snowpard", "Letsgo", "Kaminokage", "Abygaelle", "Astro", "Kimap", "BlazeLeiton", "Diskuid", "Liquid", "Sylveon", "Nanoluck", "Belzebel",
+            "MadFrost", "Buyshinynair", "Nostazz", "Giorgio25", "NamelessHero27", "Xarcom", "Novus"
+        };
         public bool IsEnabled
         {
             get { return _isEnabled; }
@@ -59,7 +66,8 @@ namespace PROBot.Modules
 
         private void Game_PlayerUpdated(PlayerInfos player)
         {
-            if (player.Name.Contains("[") || player.Name.Contains("Daredevil") || player.Name.Contains("Fluffles") || player.Name.Contains("Qeight") || player.Name.Contains("Senrosia"))
+            //if (player.Name.Contains("[") || player.Name.Contains("Daredevil") || player.Name.Contains("Fluffles") || player.Name.Contains("Qeight") || player.Name.Contains("Senrosia"))
+            if (isStaffInList(player.Name))
             {
                 int distance = _bot.Game.DistanceTo(player.PosX, player.PosY);
                 if (!player.IsAfk && IsEnabled)
@@ -68,6 +76,15 @@ namespace PROBot.Modules
                     _bot.Logout(false);
                 }
             }
+        }
+
+        private bool isStaffInList(string name)
+        {
+            foreach (string item in staffs)
+            {
+                if (item.Contains(name)) return true;
+            }
+            return false;
         }
     }
 }
