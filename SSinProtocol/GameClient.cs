@@ -155,8 +155,10 @@ namespace PROProtocol
         private Queue<object> _dialogResponses = new Queue<object>();
 
         private Timeout _movementTimeout = new Timeout();
+        private int movementTimeout = 100;
         private Timeout _battleTimeout = new Timeout();
         private Timeout _loadingTimeout = new Timeout();
+        private int loadingTimeout = 100;
         private Timeout _mountingTimeout = new Timeout();
         private Timeout _teleportationTimeout = new Timeout();
         private Timeout _dialogTimeout = new Timeout();
@@ -212,6 +214,9 @@ namespace PROProtocol
             _connection.PacketReceived += OnPacketReceived;
             _connection.Connected += OnConnectionOpened;
             _connection.Disconnected += OnConnectionClosed;
+
+            loadingTimeout = Rand.Next(1500, 4000);
+            movementTimeout = Rand.Next(750, 2000);
         }
 
         public void Open()
@@ -362,7 +367,7 @@ namespace PROProtocol
 
                 if (_movements.Count == 0 && _surfAfterMovement)
                 {
-                    _movementTimeout.Set(Rand.Next(500, 600));
+                    _movementTimeout.Set(movementTimeout);
                     //_movementTimeout.Set(Rand.Next(750, 2000));
                 }
             }
@@ -471,12 +476,14 @@ namespace PROProtocol
                 else if (ScriptStatus == 1)
                 {
                     SendDialogResponse(0);
-                    _dialogTimeout.Set();
+                    //_dialogTimeout.Set();
+                    _dialogTimeout.Set(Rand.Next(100, 200));
                 }
                 else if (ScriptStatus == 3 || ScriptStatus == 4)
                 {
                     SendDialogResponse(GetNextDialogResponse());
-                    _dialogTimeout.Set();
+                    //_dialogTimeout.Set();
+                    _dialogTimeout.Set(Rand.Next(100, 200));
                 }
             }
         }
@@ -556,7 +563,8 @@ namespace PROProtocol
             if (!IsCreatingNewCharacter) return;
             IsCreatingNewCharacter = false;
             SendCreateCharacter(hair, colour, tone, clothe, eyes);
-            _dialogTimeout.Set();
+            //_dialogTimeout.Set();
+            _dialogTimeout.Set(Rand.Next(100, 200));
         }
 
         private void SendCreateCharacter(int hair, int colour, int tone, int clothe, int eyes)
@@ -848,7 +856,8 @@ namespace PROProtocol
         public void UseAttack(int number)
         {
             SendAttack(number.ToString());
-            _battleTimeout.Set();
+            //_battleTimeout.Set();
+            _battleTimeout.Set(Rand.Next(100,200));
         }
 
         public void UseItem(int id, int pokemonUid = 0)
@@ -872,7 +881,8 @@ namespace PROProtocol
                 else if (!_battleTimeout.IsActive && IsInBattle && item.Scope == 5)
                 {
                     SendAttack("item" + id);
-                    _battleTimeout.Set();
+                    //_battleTimeout.Set();
+                    _battleTimeout.Set(Rand.Next(100, 200));
                 }
             }
             else // use item on pokemon
@@ -887,7 +897,8 @@ namespace PROProtocol
                 else if (!_battleTimeout.IsActive && IsInBattle && item.Scope == 2)
                 {
                     SendAttack("item" + id + ":" + Team[pokemonUid - 1].DatabaseId);
-                    _battleTimeout.Set();
+                    //_battleTimeout.Set();
+                    _battleTimeout.Set(Rand.Next(100, 200));
                 }
             }
         }
@@ -1045,7 +1056,8 @@ namespace PROProtocol
             npc.CanBattle = false;
 
             SendTalkToNpc(npc.Id);
-            _dialogTimeout.Set();
+            //_dialogTimeout.Set();
+            _dialogTimeout.Set(Rand.Next(100, 200));
         }
 
         public bool OpenPC()
@@ -1472,7 +1484,8 @@ namespace PROProtocol
         // Server sends some movement data to move the character.
         private void OnPlayerMovement(string[] data)
         {
-            _dialogTimeout.Set();
+            //_dialogTimeout.Set();
+            _dialogTimeout.Set(Rand.Next(100, 200));
             _movements.Clear();
             string[] movements = data[1].Split(new[] { "|" }, StringSplitOptions.None);
             foreach(var movement in movements)
@@ -2452,7 +2465,7 @@ namespace PROProtocol
         {
             mapName = MapClient.RemoveExtension(mapName);
 
-            _loadingTimeout.Set(Rand.Next(1000, 1100));
+            _loadingTimeout.Set(loadingTimeout);
             //_loadingTimeout.Set(Rand.Next(1500, 4000));
 
             OpenedShop = null;
@@ -2484,6 +2497,16 @@ namespace PROProtocol
             {
                 _mapClient.DownloadMap(MapName);
             }
+        }
+
+        public void setLoadingTimeout(int value)
+        {
+            loadingTimeout = value;
+        }
+
+        public void setMovementTimeout(int value)
+        {
+            movementTimeout = value;
         }
     }
 }

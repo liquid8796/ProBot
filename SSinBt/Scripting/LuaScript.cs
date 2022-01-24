@@ -117,6 +117,7 @@ namespace PROBot.Scripting
             _lua.Globals["fatal"] = new Action<string>(Fatal);
             _lua.Globals["logout"] = new Action<string>(Logout);
             _lua.Globals["relog"] = new Action<double, string>(Relog);
+            _lua.Globals["restart"] = new Action<int, string>(RestartScript);
             _lua.Globals["stringContains"] = new Func<string, string, bool>(StringContains);
             _lua.Globals["playSound"] = new Action<string>(PlaySound);
             _lua.Globals["registerHook"] = new Action<string, DynValue>(RegisterHook);
@@ -352,6 +353,10 @@ namespace PROBot.Scripting
             _lua.Globals["tradeGiveMoney"] = new Func<string, int, bool>(TradeGiveMoney);
             _lua.Globals["tradeAcceptMoney"] = new Func<bool>(TradeAcceptMoney);
 
+            // Bot config
+            _lua.Globals["setLoadingTimeout"] = new Func<int, bool>(SetLoadingTimeout);
+            _lua.Globals["setMovementTimeout"] = new Func<int, bool>(SetMovementTimeout);
+
             foreach (string content in _libsContent)
             {
                 CallContent(content);
@@ -477,6 +482,13 @@ namespace PROBot.Scripting
         {
             LogMessage(message);
             Bot.Relog(delay);
+        }
+
+        // API: Start the script.
+        private void RestartScript(int delay, string message)
+        {
+            LogMessage(message);
+            Bot.RestartScript(delay);
         }
 
         // API return an array of all NPCs that can be challenged on the current map. format : {"npcName" = {"x" = x, "y" = y}}
@@ -3117,6 +3129,20 @@ namespace PROBot.Scripting
                 return false;
 
             Bot.Game.WaterMount = item;
+            return true;
+        }
+
+        // API: Sets loading timeout for BOT
+        private bool SetLoadingTimeout(int value)
+        {
+            Bot.Game.setLoadingTimeout(value);
+            return true;
+        }
+
+        // API: Sets movement timeout for BOT
+        private bool SetMovementTimeout(int value)
+        {
+            Bot.Game.setMovementTimeout(value);
             return true;
         }
     }

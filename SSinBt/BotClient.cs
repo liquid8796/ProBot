@@ -27,6 +27,7 @@ namespace PROBot
 
         public State Running { get; private set; }
         public bool IsPaused { get; private set; }
+        public bool IsRestart = false;
 
         public event Action<State> StateChanged;
         public event Action<string> MessageLogged;
@@ -50,6 +51,7 @@ namespace PROBot
         private bool _authenticationRequired;
 
         private Timeout _actionTimeout = new Timeout();
+        private Timeout _restartTimeout = new Timeout();
 
         public BotClient()
         {
@@ -149,6 +151,12 @@ namespace PROBot
             Game.Close();
         }
 
+        public void RestartScript(int delay)
+        {
+            Stop();
+            Restart(delay);
+        }
+
         private void LoginUpdate()
         {
             GameClient client;
@@ -207,10 +215,16 @@ namespace PROBot
             {
                 return;
             }
-
+            if (Running == State.Stopped && Script != null && IsRestart && !_restartTimeout.Update())
+            {
+                IsRestart = false;
+                Running = State.Started;
+                StateChanged?.Invoke(Running);
+                Script.Start();
+            }
             if (Running != State.Started)
             {
-                return;
+                return;           
             }
             
             if (Game.IsCreatingNewCharacter)
@@ -237,6 +251,15 @@ namespace PROBot
                 Running = State.Started;
                 StateChanged?.Invoke(Running);
                 Script.Start();
+            }
+        }
+
+        public void Restart(int delay)
+        {
+            if (Game != null && Script != null && Running == State.Stopped && !IsRestart)
+            {
+                IsRestart = true;
+                _restartTimeout.Set(delay*1000);
             }
         }
 
