@@ -157,8 +157,10 @@ namespace PROProtocol
         private Timeout _movementTimeout = new Timeout();
         private int movementTimeout = 100;
         private Timeout _battleTimeout = new Timeout();
-        private Timeout _loadingTimeout = new Timeout();
-        private int loadingTimeout = 100;
+        private Timeout _loadingMapTimeout = new Timeout();
+        private int loadingMapTimeout = 100;
+        private Timeout _loadingBattleTimeout = new Timeout();
+        private int loadingBattleTimeout = 100;
         private Timeout _mountingTimeout = new Timeout();
         private Timeout _teleportationTimeout = new Timeout();
         private Timeout _dialogTimeout = new Timeout();
@@ -183,7 +185,7 @@ namespace PROProtocol
             _movements.Count == 0
             && !_movementTimeout.IsActive
             && !_battleTimeout.IsActive
-            && !_loadingTimeout.IsActive
+            && !_loadingMapTimeout.IsActive
             && !_mountingTimeout.IsActive
             && !_teleportationTimeout.IsActive
             && !_dialogTimeout.IsActive
@@ -194,6 +196,8 @@ namespace PROProtocol
             && !_npcBattleTimeout.IsActive
             && !_moveRelearnerTimeout.IsActive
             && !IsCreatingNewCharacter;
+
+        public bool IsBattleLoaded => !_loadingBattleTimeout.IsActive;
 
         public bool IsTeleporting => _teleportationTimeout.IsActive;
 
@@ -215,7 +219,8 @@ namespace PROProtocol
             _connection.Connected += OnConnectionOpened;
             _connection.Disconnected += OnConnectionClosed;
 
-            loadingTimeout = Rand.Next(1500, 4000);
+            loadingMapTimeout = Rand.Next(1500, 4000);
+            loadingBattleTimeout = Rand.Next(100, 200);
             movementTimeout = Rand.Next(750, 2000);
         }
 
@@ -237,7 +242,7 @@ namespace PROProtocol
                 return;
 
             _movementTimeout.Update();
-            _loadingTimeout.Update();
+            _loadingMapTimeout.Update();
             _mountingTimeout.Update();
             _teleportationTimeout.Update();
             _dialogTimeout.Update();
@@ -250,6 +255,7 @@ namespace PROProtocol
             if (!_battleTimeout.Update() && ActiveBattle != null && ActiveBattle.IsFinished)
             {
                 ActiveBattle = null;
+                _loadingMapTimeout.Set(100);
                 SendPacket("_");
             }
 
@@ -576,11 +582,8 @@ namespace PROProtocol
         {
             // DSSock.AttemptLogin
             // For test verionAccount
-            string os = "Windows 10  (10.0.19044.1466) 64bit";
-            LogMessage("Hwid after: " + Encryption.FixDeviceId(deviceId.ToString()) + ". OS: " + os + "");
-            SendPacket("+|.|" + username + "|.|" + password + "|.|" + Version + "|.|" + Encryption.FixDeviceId(deviceId.ToString()) + "|.|" + os);
-            // For main account
-            //SendPacket("+|.|" + username + "|.|" + password + "|.|" + Version + "|.|" + "4e17d31e-f448-467d-9a28-a7080f943f56" + "|.|" + os);
+            LogMessage("Hwid after: " + Encryption.FixDeviceId(deviceId.ToString()) + ". OS: " + osInfo);
+            SendPacket("+|.|" + username + "|.|" + password + "|.|" + Version + "|.|" + Encryption.FixDeviceId(deviceId.ToString()) + "|.|" + osInfo);
         }
 
         public void SendUseItem(int id, int pokemon = 0)
@@ -1888,6 +1891,7 @@ namespace PROProtocol
             IsScriptActive = false;
 
             IsInBattle = true;
+            _loadingMapTimeout.Set(100);
             ActiveBattle = new Battle(PlayerName, data);
             ActiveBattle.ActivePokemonChanged += ActivePokemonChanged;
             ActiveBattle.OpponentChanged += OpponentChanged;
@@ -2465,8 +2469,8 @@ namespace PROProtocol
         {
             mapName = MapClient.RemoveExtension(mapName);
 
-            _loadingTimeout.Set(loadingTimeout);
-            //_loadingTimeout.Set(Rand.Next(1500, 4000));
+            _loadingMapTimeout.Set(loadingMapTimeout);
+            //_loadingMapTimeout.Set(Rand.Next(1500, 4000));
 
             OpenedShop = null;
             MoveRelearner = null;
@@ -2499,9 +2503,9 @@ namespace PROProtocol
             }
         }
 
-        public void setLoadingTimeout(int value)
+        public void setLoadingMapTimeout(int value)
         {
-            loadingTimeout = value;
+            loadingMapTimeout = value;
         }
 
         public void setMovementTimeout(int value)

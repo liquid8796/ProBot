@@ -354,7 +354,7 @@ namespace PROBot.Scripting
             _lua.Globals["tradeAcceptMoney"] = new Func<bool>(TradeAcceptMoney);
 
             // Bot config
-            _lua.Globals["setLoadingTimeout"] = new Func<int, bool>(SetLoadingTimeout);
+            _lua.Globals["setLoadingMapTimeout"] = new Func<int, bool>(SetLoadingMapTimeout);
             _lua.Globals["setMovementTimeout"] = new Func<int, bool>(SetMovementTimeout);
 
             foreach (string content in _libsContent)
@@ -630,7 +630,17 @@ namespace PROBot.Scripting
                     }
                 }
             }
-
+            for(int i = 0; i < links.Count; i++)
+            {
+                var element = links.ElementAt(i);
+                LogMessage("Link["+i+"]: ");
+                foreach (int val in element.Values)
+                {
+                    Console.WriteLine("Value: {0}", val);
+                    LogMessage(val + "-" + element.FirstOrDefault(x => x.Value == val).Key);
+                }
+            }
+            
             return links;
         }
 
@@ -1640,8 +1650,11 @@ namespace PROBot.Scripting
         // API: Moves to the nearest cell teleporting to the specified map.
         private bool MoveToMap(string mapName)
         {
-            Fatal("error: moveToMap: this function is no longer available, please use moveToCell instead.");
-            return false;
+            /*Fatal("error: moveToMap: this function is no longer available, please use moveToCell instead.");
+            return false;*/
+            if (!ValidateAction("moveToMap", false)) return false;
+
+            return ExecuteAction(Bot.MoveToLink(mapName.ToUpperInvariant()));
         }
 
         // API: Moves to a random accessible cell of the specified rectangle.
@@ -3133,9 +3146,9 @@ namespace PROBot.Scripting
         }
 
         // API: Sets loading timeout for BOT
-        private bool SetLoadingTimeout(int value)
+        private bool SetLoadingMapTimeout(int value)
         {
-            Bot.Game.setLoadingTimeout(value);
+            Bot.Game.setLoadingMapTimeout(value);
             return true;
         }
 
