@@ -1,5 +1,5 @@
-﻿using Bot;
-using Protocol;
+﻿using PROBot;
+using PROProtocol;
 using PROShine.Controls;
 using System;
 using System.Collections.Generic;
@@ -31,11 +31,11 @@ namespace PROShine
             _localChatTab.Content = new ChatPanel();
             TabControl.Items.Add(_localChatTab);
             _channelTabs = new Dictionary<string, ButtonTab>();
-            AddChannelTab("All");
-            AddChannelTab("Trade");
-            AddChannelTab("Battle");
-            AddChannelTab("Other");
-            AddChannelTab("Help");
+            //AddChannelTab("All");
+            //AddChannelTab("Trade");
+            //AddChannelTab("Battle");
+            //AddChannelTab("Other");
+            //AddChannelTab("Help");
             _pmTabs = new Dictionary<string, ButtonTab>();
             _channelPmTabs = new Dictionary<string, ButtonTab>();
         }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Win32;
-using Bot;
-using Protocol;
+using PROBot;
+using PROProtocol;
 using PROShine.Views;
 using System;
 using System.Collections.Generic;
@@ -16,7 +16,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Input;
 using System.Collections.ObjectModel;
-using Bot.Modules;
+using PROBot.Modules;
 using System.Linq;
 
 namespace PROShine

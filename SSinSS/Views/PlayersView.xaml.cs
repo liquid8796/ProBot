@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using Bot;
-using Protocol;
+using PROBot;
+using PROProtocol;
 using System.ComponentModel;
 
 namespace PROShine

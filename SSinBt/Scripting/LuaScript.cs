@@ -357,12 +357,6 @@ namespace PROBot.Scripting
             _lua.Globals["setLoadingMapTimeout"] = new Func<int, bool>(SetLoadingMapTimeout);
             _lua.Globals["setMovementTimeout"] = new Func<int, bool>(SetMovementTimeout);
 
-            // Chat
-            _lua.Globals["closeChannel"] = new Func<string, bool>(CloseChannel);
-
-            // Hacking function
-            _lua.Globals["useSurf"] = new Func<bool>(UseSurf);
-
             foreach (string content in _libsContent)
             {
                 CallContent(content);
@@ -3162,20 +3156,6 @@ namespace PROBot.Scripting
         private bool SetMovementTimeout(int value)
         {
             Bot.Game.setMovementTimeout(value);
-            return true;
-        }
-
-        // API: Close channel chat by name
-        private bool CloseChannel(string name)
-        {
-            Bot.Game.CloseChannel(name);
-            return true;
-        }
-
-        // API: Use Surf
-        private bool UseSurf()
-        {
-            Bot.Game.SendPacket("w|.|/surf");
             return true;
         }
     }
