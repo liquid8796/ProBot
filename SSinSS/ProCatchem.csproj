@@ -191,16 +191,6 @@
     <Resource Include="logo.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SSinBt\SSinBt.csproj">
-      <Project>{b6788260-bf98-45d2-9fe3-52b12e313cd8}</Project>
-      <Name>SSinBt</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SSinProtocol\SSinProtocol.csproj">
-      <Project>{c9a1afc8-2228-4542-b2c7-b6eca1461c84}</Project>
-      <Name>SSinProtocol</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5.2">
       <Visible>False</Visible>
       <ProductName>Microsoft .NET Framework 4.5.2 %28x86 and x64%29</ProductName>
@@ -211,6 +201,16 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\source\repos\PROCatchem\Bot\Bot.csproj">
+      <Project>{887a773d-f06e-49ee-bdfc-54f6c82fc0e3}</Project>
+      <Name>Bot</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\source\repos\PROCatchem\Protocol\Protocol.csproj">
+      <Project>{e59180ae-cadd-45f6-bc36-b347097855b0}</Project>
+      <Name>Protocol</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

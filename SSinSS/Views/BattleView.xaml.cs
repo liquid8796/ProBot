@@ -1,6 +1,6 @@
 ﻿using FontAwesome.WPF;
-using PROBot;
-using PROProtocol;
+using Bot;
+using Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
