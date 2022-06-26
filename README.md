@@ -1,1 +1,1 @@
-Good Bot for Pro Team
+A new gereration BOT for PRO (Beta testing)
